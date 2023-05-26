@@ -6,9 +6,9 @@
   var sck = "";
   var novoLink = ""
   var arrURL = [];
-  var rastreio = "{{utm_campaign}}_{{utm_source}}_{{utm_medium}}_{{utm_content}}_{{utm_term}}" //Valor que vai entrar no SCK lá na HOTMART
+  var rastreio = "{{[UTM] utm_campaign}}_{{[UTM] utm_source}}_{{[UTM] utm_medium}}_{{[UTM] utm_content}}_{{[UTM] utm_term}}" //Valor que vai entrar no SCK lá na HOTMART
 
-  if ("{{utm_medium}}" != "undefined"){ //Ele verifica se existe UTM na URL
+  if ("{{[UTM] utm_medium}}" != "undefined"){ //Ele verifica se existe UTM na URL
  
     for( var i = 0; i < links.length; i++){
       console.log(1);
