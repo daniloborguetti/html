@@ -1,0 +1,31 @@
+<script>
+(function (){
+ 
+  var links = document.querySelectorAll('a[href*="pay.hotmart.com"]');
+  var original = "";
+  var sck = "";
+  var novoLink = ""
+  var arrURL = [];
+  var rastreio = "{{utm_campaign}}_{{utm_source}}_{{utm_medium}}_{{utm_content}}" //Valor que vai entrar no SCK lá na HOTMART
+
+  if ("{{utm_medium}}" != "undefined"){ //Ele verifica se existe UTM na URL
+ 
+    for( var i = 0; i < links.length; i++){
+      console.log(1);
+      original = links[i].getAttribute("href");
+      sck = "sck=" + rastreio;
+      arrURL = original.split('?');
+     
+      if(arrURL.length == 1){
+        novoLink = original + "?" + sck;
+      }
+      else {
+        novoLink = arrURL[0] + "?" + sck + "&" + arrURL[1];
+      }
+     
+      links[i].setAttribute("href", novoLink)
+    }
+  }
+ 
+})(); 
+</script>
