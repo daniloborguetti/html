@@ -1,0 +1,19 @@
+<script>
+  
+    var urlParams = new URLSearchParams(window.location.search);
+    var utmSource = urlParams.get('utm_source');
+    var utmMedium = urlParams.get('utm_medium');
+    var utmCampaign = urlParams.get('utm_campaign');
+    var utmContent = urlParams.get('utm_content');
+    var utmTerm = urlParams.get('utm_term');
+  
+    var page2URL = 'https://pay.hotmart.com/S74418454H?checkoutMode=10&bid=1683838488934' + window.location.pathname +
+                   '&utm_source=' + encodeURIComponent(utmSource) +
+                   '&utm_medium=' + encodeURIComponent(utmMedium) +
+                   '&utm_campaign=' + encodeURIComponent(utmCampaign) +
+                   '&utm_content=' + encodeURIComponent(utmContent) +
+                   '&utm_term=' + encodeURIComponent(utmTerm);
+  
+    window.location.href = page2URL;
+  
+</script>
