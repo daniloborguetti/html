@@ -1,0 +1,1 @@
+<script>localStorage.setItem('user_id', {{dl - User ID}})</script>
