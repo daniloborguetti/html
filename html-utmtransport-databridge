@@ -1,0 +1,71 @@
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var form = document.querySelector('form[name="formulário"]');
+    if (form) { 
+      form.addEventListener('submit', function(e) {
+ 
+        function getCookie(name) {
+          let cookies = document.cookie.split("; ");
+          for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i].split("=");
+            if (cookie[0] === name) {
+              return cookie[1] || ''; 
+            }
+          }
+          return '';
+        }
+        
+        // Script 1
+        var gaValue = getCookie("_ga");
+        var gaX5Value = getCookie("_ga_XXXXXXXXXX");
+ 
+        if (gaValue && gaX5Value) {
+          var a = gaValue.substr(6);
+          var b = gaX5Value.substr(6);
+          var c = window.google_tag_data.glBridge.generate({_ga: a, _ga_XXXXXXXXX: b});
+          var d = document.getElementById("form-field-cross");
+          if (d) { 
+            d.value = c;
+          }
+        }
+        
+        // Script 2
+        var urlParams = new URLSearchParams(window.location.search);
+
+        var utmSource = urlParams.has('utm_source') ? urlParams.get('utm_source') : '';
+        var utmMedium = urlParams.has('utm_medium') ? urlParams.get('utm_medium') : '';
+        var utmCampaign = urlParams.has('utm_campaign') ? urlParams.get('utm_campaign') : '';
+        var utmContent = urlParams.has('utm_content') ? urlParams.get('utm_content') : '';
+        var utmTerm = urlParams.has('utm_term') ? urlParams.get('utm_term') : '';
+
+        var linkRedirecionamento = 'https://pay.hotmart.com/O84105847G?checkoutMode=10&_gl=[field id="cross"]';
+
+        if (gaValue && gaX5Value) {
+          linkRedirecionamento += gaValue.substr(6);
+        }
+
+        if (utmSource !== '') {
+          linkRedirecionamento += '&utm_source=' + utmSource;
+        }
+
+        if (utmMedium !== '') {
+          linkRedirecionamento += '&utm_medium=' + utmMedium;
+        }
+
+        if (utmCampaign !== '') {
+          linkRedirecionamento += '&utm_campaign=' + utmCampaign;
+        }
+
+        if (utmContent !== '') {
+          linkRedirecionamento += '&utm_content=' + utmContent;
+        }
+
+        if (utmTerm !== '') {
+          linkRedirecionamento += '&utm_term=' + utmTerm;
+        }
+
+        window.location.href = linkRedirecionamento;
+      });
+    }
+  });
+</script>
