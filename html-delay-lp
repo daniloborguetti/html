@@ -1,0 +1,17 @@
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<!--Início do codigo para delay de conteudo-->
+<style>
+    .esconder {
+        display: none;
+    }
+</style>
+
+<script>
+        $(document).ready(function() {
+        setTimeout(() => {
+            $('.esconder').fadeIn('slow');
+        }, 420 * 1 * 1000) // 30 é a quantidade em segundos do delay
+    })
+</script>
+<!--Fim do codigo para delay de conteudo-->
