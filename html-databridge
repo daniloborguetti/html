@@ -21,7 +21,7 @@
           var a = gaValue.substr(6);
           var b = gaX5Value.substr(6);
           var c = window.google_tag_data.glBridge.generate({_ga: a, _ga_XXXXXXXXX: b});
-          var d = document.getElementById("form-field-cross");
+          var d = document.getElementById("form-field-databridge");
           if (d) { 
             d.value = c;
           }
