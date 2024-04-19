@@ -388,7 +388,7 @@
 
 })(document, window, {
   'events': {
-    '0': true
+    '100': true
   },
   'percentages': {
     'every': 25,
