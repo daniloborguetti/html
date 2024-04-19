@@ -65,7 +65,7 @@
     var video = new Vimeo.Player(el);
     var percentages = config._track.percentages;
     var eventNameDict = {
-			'100': 'complete'
+			'100': 'ended'
 		};
     var cache = {};
 
