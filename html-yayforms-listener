@@ -1,0 +1,19 @@
+<script>
+var eventMethod = window.addEventListener ? "addEventListener" : "attachEvent";
+var eventer = window[eventMethod];
+var messageEvent = eventMethod == "attachEvent" ? "onmessage" : "message";
+
+eventer(messageEvent, function(e) {
+  var key = e.message ? "message" : "data";
+  var data = e[key];
+  var validEventTypes = ["YFView", "YFStart", "YFAnswer", "YFSubmit"];
+  
+  if (validEventTypes.includes(data.type)) {
+    window.dataLayer = window.dataLayer || [];
+    window.dataLayer.push({
+      'event': data.type,
+      'data': data.eventData
+    });
+  }
+}, false);
+</script>
