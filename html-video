@@ -1,0 +1,68 @@
+<script>
+(function() {
+    function eventHandler(e) {
+        var video = e.target;
+        var videoTitle = decodeURIComponent(video.currentSrc.split('/').pop());
+        var videoUrl = video.currentSrc;
+        var videoProvider = 'embedded html5 video';
+        var videoCurrentTime = video.currentTime;
+        var videoDuration = video.duration;
+        var pct = Math.floor(100 * videoCurrentTime / videoDuration);
+        var percentMarkers = [10, 25, 50, 75];
+
+        switch (e.type) {
+            case 'timeupdate':
+                for (var i = 0; i < percentMarkers.length; i++) {
+                    var marker = percentMarkers[i];
+                    if (pct >= marker && !video._progress_markers[marker]) {
+                        video._progress_markers[marker] = true;
+                        dataLayer.push({
+                            event: 'video_progress',
+                            video_percent: marker,
+                            video_title: videoTitle,
+                            video_current_time: videoCurrentTime,
+                            video_duration: videoDuration,
+                            video_url: videoUrl,
+                            video_provider: videoProvider
+                        });
+                    }
+                }
+                break;
+            case 'play':
+                if (!video._started) {
+                    video._started = true;
+                    dataLayer.push({
+                        event: 'video_start',
+                        video_percent: 0,
+                        video_title: videoTitle,
+                        video_current_time: videoCurrentTime,
+                        video_duration: videoDuration,
+                        video_url: videoUrl,
+                        video_provider: videoProvider
+                    });
+                }
+                break;
+            case 'ended':
+                dataLayer.push({
+                    event: 'video_complete',
+                    video_percent: 100,
+                    video_title: videoTitle,
+                    video_current_time: videoCurrentTime,
+                    video_duration: videoDuration,
+                    video_url: videoUrl,
+                    video_provider: videoProvider
+                });
+                break;
+        }
+    }
+
+    var videos = document.querySelectorAll('video');
+    for (var i = 0; i < videos.length; i++) {
+        videos[i]._progress_markers = {};
+        videos[i]._started = false;
+        videos[i].addEventListener('play', eventHandler);
+        videos[i].addEventListener('ended', eventHandler);
+        videos[i].addEventListener('timeupdate', eventHandler);
+    }
+})();
+</script>
