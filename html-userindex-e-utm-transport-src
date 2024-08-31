@@ -27,10 +27,10 @@
 
     function updateLinks() {
         var t = new URLSearchParams(window.location.search);
-        var src = getCookie("LeadUserIndex");  // Mudança para capturar o cookie "LeadUserIndex"
+        var src = getCookie("LeadUserIndex"); 
 
         if (src) {
-            t.append("src", src);  // Mudança para anexar o parâmetro "src"
+            t.append("src", src);  
 
             t.toString() && document.querySelectorAll("a").forEach(function(e) {
                 for (let r = 0; r < prefix.length; r++) {
