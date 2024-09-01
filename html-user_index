@@ -1,0 +1,19 @@
+<script>
+  (function() {
+    // Obter a variável do Google Tag Manager
+    var eventId = ({{user-js-user_index}});
+    
+    // Esperar até que todos os elementos "a" estejam completamente carregados
+    window.addEventListener('load', function() {
+      var links = document.querySelectorAll('a');
+      links.forEach(function(link) {
+        var href = link.href;
+        if (href.includes('https://payment.hotmart.com') || href.includes('https://pay.hotmart.com')) {
+          var newUrl = new URL(href);
+          newUrl.searchParams.set('xcod', eventId);
+          link.href = newUrl.toString();
+        }
+      });
+    });
+  })();
+</script>
