@@ -9,6 +9,6 @@ sessionStorage.setItem('LeadUserIndex', {{api-event_id}});
  var dateTimeNow = date.getTime(); 
  date.setTime(dateTimeNow + expirationTime);
  var date = date.toUTCString();
- document.cookie = cookieName+"="+cookieValue+"; SameSite=None; Secure; expires="+date+"; path=/; domain=.daniloborguetti.com.br";  
+ document.cookie = cookieName+"="+cookieValue+"; SameSite=None; Secure; expires="+date+"; path=/; domain=.";  
 })();
 </script>
