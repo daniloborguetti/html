@@ -1,0 +1,52 @@
+<script>
+    const prefix = ["https://checkout.com.br"];
+
+    function getParams() {
+        const url = new URL(window.top.location.href);
+        let paramsString = "";
+        
+        if (url) {
+            const utmSource = url.searchParams.get("utm_source") || "";
+            const utmMedium = url.searchParams.get("utm_medium") || "";
+            const utmCampaign = url.searchParams.get("utm_campaign") || "";
+            const utmTerm = url.searchParams.get("utm_term") || "";
+            const utmContent = url.searchParams.get("utm_content") || "";
+            const fbclid = url.searchParams.get("fbclid") || "";
+
+            if (url.search) {
+                paramsString = `&sck=${utmSource}|${utmMedium}|${utmCampaign}|${utmTerm}|${utmContent}`;
+            }
+            console.log(paramsString);
+        }
+
+        return paramsString;
+    }
+
+    function getCookie(name) {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        return match ? match[2] : null;
+    }
+
+    function updateLinks() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const leadUserIndex = getCookie("LeadUserIndex") || sessionStorage.getItem("LeadUserIndex");
+
+        if (leadUserIndex) {
+            urlParams.append("src", leadUserIndex);
+
+            document.querySelectorAll("a").forEach(function(link) {
+                for (const p of prefix) {
+                    if (link.href.includes(p)) {
+                        const separator = link.href.includes("?") ? "&" : "?";
+                        link.href += separator + urlParams.toString() + getParams();
+                    }
+                }
+            });
+        } else {
+            // Tenta novamente após 100ms se o LeadUserIndex ainda não estiver presente
+            setTimeout(updateLinks, 100);
+        }
+    }
+
+    window.addEventListener('load', updateLinks);
+</script>
