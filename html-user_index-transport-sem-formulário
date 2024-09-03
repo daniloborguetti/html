@@ -1,7 +1,7 @@
 <script>
   (function() {
     // Obter a variável do Google Tag Manager
-    var eventId = ({{user-js-user_index}});
+    var eventId = ({{user-consulta-user_index}});
     
     // Esperar até que todos os elementos "a" estejam completamente carregados
     window.addEventListener('load', function() {
