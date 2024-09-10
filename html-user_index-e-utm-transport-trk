@@ -1,0 +1,97 @@
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+  crossorigin="anonymous"
+></script>
+<script type="text/javascript">
+  var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = window.location.search.substring(1),
+      sURLVariables = sPageURL.split('&'),
+      sParameterName,
+      i;
+    for (i = 0; i < sURLVariables.length; i++) {
+      sParameterName = sURLVariables[i].split('=');
+      if (sParameterName[0] === sParam) {
+        return typeof sParameterName[1] === undefined
+          ? true
+          : decodeURIComponent(sParameterName[1]);
+      }
+    }
+    return false;
+  };
+
+  var getCookie = function(name) {
+    var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    if (match) return match[2];
+    return null;
+  };
+
+  // Pega o LeadUserIndex do Cookie ou SessionStorage
+  var leadUserIndex = sessionStorage.getItem('LeadUserIndex') || getCookie('LeadUserIndex');
+
+  var utm_source = getUrlParameter('utm_source');
+  var utm_medium = getUrlParameter('utm_medium');
+  var utm_campaign = getUrlParameter('utm_campaign');
+  var utm_term = getUrlParameter('utm_term');
+  var utm_content = getUrlParameter('utm_content');
+  var e = getUrlParameter('e');
+  var t = getUrlParameter('t');
+
+  $('a').each(function () {
+    var url = $(this).attr('href');
+
+    if (e !== false && t !== false) {
+      url =
+        url +
+        '&utm_source=' +
+        utm_source +
+        '&utm_medium=' +
+        utm_medium +
+        '&utm_campaign=' +
+        utm_campaign +
+        '&utm_content=' +
+        utm_content +
+        '&utm_term=' +
+        utm_term +
+        '&e=' +
+        e +
+        '&t=' +
+        t;
+    } else if (e !== false) {
+      url =
+        url +
+        '&utm_source=' +
+        utm_source +
+        '&utm_medium=' +
+        utm_medium +
+        '&utm_campaign=' +
+        utm_campaign +
+        '&utm_content=' +
+        utm_content +
+        '&utm_term=' +
+        utm_term +
+        '&e=' +
+        e;
+    } else {
+      url =
+        url +
+        '&utm_source=' +
+        utm_source +
+        '&utm_medium=' +
+        utm_medium +
+        '&utm_campaign=' +
+        utm_campaign +
+        '&utm_content=' +
+        utm_content +
+        '&utm_term=' +
+        utm_term;
+    }
+
+    // Adiciona o parâmetro trk com o LeadUserIndex
+    if (leadUserIndex) {
+      url = url + '&trk=' + leadUserIndex;
+    }
+
+    $(this).attr('href', url);
+  });
+</script>
