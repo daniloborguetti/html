@@ -5,8 +5,8 @@ dataLayer.push({
     'eventLabel': 'Typebot Form', // Rótulo do evento (nome do formulário)
     'formId': 'FormID', // ID fictício do formulário
     'userData': {
-      'nome': {{name}},
+      'name': {{name}},
       'email': {{email}},
-      'telefone': {{phone}}
+      'phone': {{phone}}
     }
   });
