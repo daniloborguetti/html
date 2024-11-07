@@ -1,25 +1,12 @@
-window.dataLayer = window.dataLayer || [];
-
-// Capturando os dados do usuário
-var nome = {{nome}};
-var email = {{email}};
-var telefone = {{telefone}};
-
-  // Evento Typebot Lead
-  window.dataLayer.push({
+dataLayer.push({
     'event': 'Typebot Lead',
     'eventCategory': 'Form', // Categoria do evento
     'eventAction': 'Submit', // Ação do evento
     'eventLabel': 'Typebot Form', // Rótulo do evento (nome do formulário)
-    'formId': 'typebotForm', // ID fictício do formulário
-    'formClass': 'typebot-form-class', // Classe fictícia do formulário
-    'formSelector': '#typebot-form-id', // Seletor CSS fictício do formulário
-    'formData': {
-      'nome': nome,
-      'email': email,
-      'telefone': telefone
+    'formId': 'FormID', // ID fictício do formulário
+    'userData': {
+      'nome': {{name}},
+      'email': {{email}},
+      'telefone': {{phone}}
     }
   });
-
-// Executa a função de simulação de envio de formulário
-FormSubmit();
