@@ -94,7 +94,7 @@
     var responseData = getResponseData(xhr);
 
     dataLayer.push({
-      event: 'generate_lead',
+      event: 'GreatpagesFormSubmit',
       attributes: {
         'type': xhr.method || '',
         'url': urlSegments.fullUrl || '',
