@@ -1,0 +1,137 @@
+<script id="gtm-ajax-listener" type="text/javascript">
+
+(function () {
+  'use strict';
+
+  var originalOpen = window.XMLHttpRequest.prototype.open,
+      originalSend = window.XMLHttpRequest.prototype.send;
+  
+  var lastSentTimestamp = 0; // Para evitar múltiplos disparos rápidos
+
+  function trimSpecialChars(str) {
+    return str ? str.replace(/^[\s﻿\xA0]+|[\s﻿\xA0]+$/g, '') : '';
+  }
+
+  function objMap(data, delimiter, splitSeparator, decode) {
+    if (!data) return {};
+    var obj = {};
+    var arr = data.split(delimiter);
+    for (var i = 0; i < arr.length; i++) {
+      var item = decode ? decodeURIComponent(arr[i]) : arr[i];
+      var pair = item.split(splitSeparator);
+      var key = trimSpecialChars(pair[0]);
+      var value = trimSpecialChars(pair[1]);
+      if (key && value) obj[key] = value;
+    }
+    return obj;
+  }
+
+  function getUrlSegments(url) {
+    var fakeElement = document.createElement('a');
+    fakeElement.href = url;
+    var queryString = fakeElement.search ? fakeElement.search.slice(1) : '';
+    return {
+      fullUrl: fakeElement.href,
+      hostName: fakeElement.hostname,
+      pathName: fakeElement.pathname,
+      queryString: queryString,
+      queryParameters: objMap(queryString, '&', '=', true)
+    };
+  }
+
+  function parseJSON(text) {
+    try {
+      return JSON.parse(text);
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function getResponseData(xhr) {
+    try {
+      if (xhr.responseType === 'json') {
+        return xhr.response; // Retorna o objeto JSON diretamente
+      } else if (xhr.responseType === '' || xhr.responseType === 'text') {
+        return parseJSON(xhr.responseText) || xhr.responseText; // Tenta parsear JSON ou retorna texto
+      } else {
+        return null; // Evita erro de acesso a responseText em tipos incompatíveis
+      }
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function isGreatpagesFormSubmission(xhr) {
+    var urlSegments = getUrlSegments(xhr.requestUrl);
+
+    // Verifica se é um envio do Greatpages
+    if (!urlSegments.fullUrl.includes("greatpages")) {
+      return false;
+    }
+
+    var responseData = getResponseData(xhr);
+
+    // Se a resposta estiver vazia, não dispare o evento
+    if (!responseData) {
+      return false;
+    }
+
+    // Garante que não estamos disparando eventos múltiplos rapidamente
+    var now = Date.now();
+    if (now - lastSentTimestamp < 3000) {
+      return false;
+    }
+    lastSentTimestamp = now;
+
+    return true;
+  }
+
+  function pushEvent(xhr) {
+    if (!isGreatpagesFormSubmission(xhr)) return;
+
+    var urlSegments = getUrlSegments(xhr.requestUrl);
+    var headers = objMap(xhr.getAllResponseHeaders(), '\n', ':');
+    var responseData = getResponseData(xhr);
+
+    dataLayer.push({
+      event: 'generate_lead',
+      attributes: {
+        'type': xhr.method || '',
+        'url': urlSegments.fullUrl || '',
+        'queryParameters': urlSegments.queryParameters,
+        'pathname': urlSegments.pathName || '',
+        'hostname': urlSegments.hostName || '',
+        'statusCode': xhr.status || '',
+        'statusText': xhr.statusText || '',
+        'headers': headers,
+        'timestamp': Date.now(),
+        'contentType': headers['content-type'] || '',
+        'response': responseData
+      }
+    });
+  }
+
+  function openRequest() {
+    this.method = arguments[0];
+    this.requestUrl = arguments[1];
+    originalOpen.apply(this, arguments);
+  }
+
+  function sendRequest() {
+    var originalOnReadyStateChange = this.onreadystatechange || null;
+    this.onreadystatechange = function () {
+      if (this.readyState === 4) {
+        pushEvent(this);
+      }
+      if (originalOnReadyStateChange) {
+        return originalOnReadyStateChange.apply(this, arguments);
+      }
+    };
+    return originalSend.apply(this, arguments);
+  }
+
+  window.XMLHttpRequest.prototype.open = openRequest;
+  window.XMLHttpRequest.prototype.send = sendRequest;
+
+})();
+</script>
