@@ -1,0 +1,69 @@
+<script>
+function getParam(p) {
+  var match = RegExp('[?&]' + p + '=([^&]*)').exec(window.location.search);
+  return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function getExpiryRecord(value) {
+  var expiryPeriod = 90 * 24 * 60 * 60 * 1000; // validade de 90 dias
+  var expiryDate = new Date().getTime() + expiryPeriod;
+  return {
+    value: value,
+    expiryDate: expiryDate
+  };
+}
+
+function addTrackingParams() {
+  var gclidParam = getParam('gclid');
+  var fbclidParam = getParam('fbclid');
+  var gclsrcParam = getParam('gclsrc');
+
+  var isGclsrcValid = !gclsrcParam || gclsrcParam.indexOf('aw') !== -1;
+
+  // --- GCLID ---
+  var gclidFormFields = ['gclid', 'foobar'];
+  var gclidRecord = null;
+  var gclidField = gclidFormFields.map(function(id) {
+    return document.getElementById(id);
+  }).find(function(el) {
+    return el !== null;
+  });
+
+  if (gclidParam && isGclsrcValid) {
+    gclidRecord = getExpiryRecord(gclidParam);
+    localStorage.setItem('gclid', JSON.stringify(gclidRecord));
+  }
+
+  var gclid = gclidRecord || JSON.parse(localStorage.getItem('gclid'));
+  var isGclidValid = gclid && new Date().getTime() < gclid.expiryDate;
+
+  if (gclidField && isGclidValid) {
+    gclidField.value = gclid.value;
+  }
+
+  // --- FBCLID ---
+  var fbclidFormFields = ['fbclid', 'foobar_fb'];
+  var fbclidRecord = null;
+  var fbclidField = fbclidFormFields.map(function(id) {
+    return document.getElementById(id);
+  }).find(function(el) {
+    return el !== null;
+  });
+
+  if (fbclidParam) {
+    fbclidRecord = getExpiryRecord(fbclidParam);
+    localStorage.setItem('fbclid', JSON.stringify(fbclidRecord));
+  }
+
+  var fbclid = fbclidRecord || JSON.parse(localStorage.getItem('fbclid'));
+  var isFbclidValid = fbclid && new Date().getTime() < fbclid.expiryDate;
+
+  if (fbclidField && isFbclidValid) {
+    fbclidField.value = fbclid.value;
+  }
+}
+
+setTimeout(function() {
+  window.addEventListener('load', addTrackingParams);
+}, 3000);
+</script>
