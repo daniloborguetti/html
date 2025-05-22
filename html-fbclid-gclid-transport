@@ -1,0 +1,37 @@
+<script>
+(function() {
+
+    var whatsappURLPatterns = ["api.whatsapp.com", "wa.me", "web.whatsapp.com", "chat.whatsapp.com"];
+
+    // Captura valores necessários
+    var currentURLParams = new URLSearchParams(window.location.search);
+    var gclidValue = currentURLParams.get('gclid');
+    var fbclidValue = currentURLParams.get('fbclid');
+
+    // Define o valor do protocolo (gclid tem prioridade)
+    var protocoloAtendimento = gclidValue || fbclidValue || '';
+
+    document.querySelectorAll('a').forEach(function(el) {
+        if (whatsappURLPatterns.some(function(pattern) { return el.href.indexOf(pattern) !== -1; })) {
+            var elURL = new URL(el.href);
+            var textParam = elURL.searchParams.get('text') || '';
+
+            // Adiciona o protocolo de atendimento se houver
+            if (protocoloAtendimento) {
+                textParam += " Protocolo de atendimento: " + protocoloAtendimento;
+            }
+
+            // Reconstrói a URL
+            var base = elURL.origin + elURL.pathname;
+            var searchParams = new URLSearchParams(elURL.search);
+            searchParams.delete('text');  // Remove o parâmetro 'text' existente
+            var otherParams = searchParams.toString();
+            var separator = otherParams ? "&" : "";
+            var newHref = base + "?" + otherParams + separator + "text=" + encodeURIComponent(textParam);
+
+            el.setAttribute('href', newHref);
+        }
+    });
+
+})();
+</script>
