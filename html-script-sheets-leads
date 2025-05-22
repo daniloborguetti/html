@@ -6,6 +6,9 @@ function doGet(e) {
   // Seleciona a primeira aba da planilha ativa
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
 
+  // Captura o parâmetro de user_index
+  var user_index = e.parameter.user_index || '';
+
   // Captura os dados do formulário
   var firstname = e.parameter.firstname || '';
   var lastname  = e.parameter.lastname  || '';
@@ -24,7 +27,7 @@ function doGet(e) {
   var gclid  = e.parameter.gclid  || '';
 
   // Cria o array de dados na ordem especificada
-  var data = [new Date(), firstname, lastname, email, phone, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, gclid];
+  var data = [new Date(), user_index, firstname, lastname, email, phone, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, gclid];
 
   // Adiciona uma nova linha na planilha com os dados
   sheet.appendRow(data);
