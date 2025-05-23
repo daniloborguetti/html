@@ -9,6 +9,11 @@ function doGet(e) {
   // Captura o parâmetro de user_index
   var user_index = e.parameter.user_index || '';
 
+  // Captura os parâmetros adicionais
+  var status        = e.parameter.status        || '';
+  var qualification = e.parameter.qualification || '';
+  var value         = e.parameter.value         || '';
+
   // Captura os dados do formulário
   var firstname = e.parameter.firstname || '';
   var lastname  = e.parameter.lastname  || '';
@@ -27,7 +32,7 @@ function doGet(e) {
   var gclid  = e.parameter.gclid  || '';
 
   // Cria o array de dados na ordem especificada
-  var data = [new Date(), user_index, firstname, lastname, email, phone, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, gclid];
+  var data = [new Date(), firstname, lastname, email, phone, status, qualification, value, utm_source, utm_medium, utm_campaign, utm_content, utm_term, fbclid, gclid, user_index];
 
   // Adiciona uma nova linha na planilha com os dados
   sheet.appendRow(data);
