@@ -3,13 +3,9 @@
 
     var whatsappURLPatterns = ["api.whatsapp.com", "wa.me", "web.whatsapp.com", "chat.whatsapp.com"];
 
-    // Captura valores necessários
-    var currentURLParams = new URLSearchParams(window.location.search);
-    var gclidValue = currentURLParams.get('gclid');
-    var fbclidValue = currentURLParams.get('fbclid');
-
-    // Define o valor do protocolo (gclid tem prioridade)
-    var protocoloAtendimento = gclidValue || fbclidValue || '';
+    // Valor da variável user index injetado via GTM
+    var userIndex = '{{user-consulta-user_index}}'; // será substituído pelo valor real
+    var protocoloAtendimento = userIndex || '';
 
     document.querySelectorAll('a').forEach(function(el) {
         if (whatsappURLPatterns.some(function(pattern) { return el.href.indexOf(pattern) !== -1; })) {
