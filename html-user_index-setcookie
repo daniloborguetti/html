@@ -1,14 +1,19 @@
 <script>
-sessionStorage.setItem('LeadUserIndex', {{user-user_index}});
- (function(){
- var cookieName = "LeadUserIndex"; // Nome do Cookie
- var cookieValue = {{user-user_index}}; // Valor do Cookie
- var expirationTime = 34560000; // Um ano em segundos
- expirationTime = expirationTime * 1000;
- var date = new Date(); 
- var dateTimeNow = date.getTime(); 
- date.setTime(dateTimeNow + expirationTime);
- var date = date.toUTCString();
- document.cookie = cookieName+"="+cookieValue+"; SameSite=None; Secure; expires="+date+"; path=/; domain=.";  
-})();
+  sessionStorage.setItem('LeadUserIndex', {{user-user_index}});
+
+  (function () {
+    var cookieName = "LeadUserIndex"; // Nome do Cookie
+    var cookieValue = {{user-user_index}}; // Valor do Cookie
+    var expirationTime = 34560000; // Um ano em segundos
+    expirationTime = expirationTime * 1000;
+
+    var date = new Date();
+    date.setTime(date.getTime() + expirationTime);
+    var expires = date.toUTCString();
+
+    // Define cookie como primário (First-Party), sem SameSite, Secure e domain
+    document.cookie = cookieName + "=" + encodeURIComponent(cookieValue) + 
+                      "; expires=" + expires + 
+                      "; path=/";
+  })();
 </script>
