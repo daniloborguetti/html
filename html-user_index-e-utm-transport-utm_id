@@ -1,5 +1,5 @@
 <script>
-    const prefix = ["https://payment.hotmart.com", "https://pay.hotmart.com", "https://go.hotmart.com"];
+    const prefix = ["https://pay.checkout.com"];
 
     function getParams() {
         const url = new URL(window.top.location.href);
