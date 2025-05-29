@@ -1,0 +1,35 @@
+<script>
+  // Check if Webflow is loaded and ready 
+  // Mentioned at https://discourse.webflow.com/t/webflow-js-and-jquery-plugins/907
+  var Webflow = Webflow || [];
+  Webflow.push(function() {
+	  
+    // Loop through each form and attach the listener
+    var forms = document.querySelectorAll('form');
+    forms.forEach(function(form) {
+      form.addEventListener('submit', function(event) {
+        var formFields = [];
+        var elements = form.elements;
+
+        // Collect form data as an array of objects
+        Array.from(elements).forEach(function(element) {
+          if (element.name) {
+            formFields.push({ name: element.name, value: element.value });
+          }
+        });
+
+        var formFieldsObject = formFields.reduce(function(result, formField) {
+          result[formField.name] = formField.value;
+          return result;
+        }, {});
+
+        // Push data to the dataLayer
+        window.dataLayer.push({
+          event: 'WebflowFormSubmit',
+          form_id: form.id,
+          form_fields: formFieldsObject
+        });
+      });
+    });
+  });
+</script>
