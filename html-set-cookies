@@ -14,10 +14,9 @@
         ? "." + domainParts.slice(-2).join('.')  // Considera apenas os dois últimos segmentos
         : "." + location.hostname.replace(/^www\./i, ""); // Remove 'www.' para cobrir subdomínios
 
-    // Define o cookie
+    // Define o cookie (sem Secure e SameSite)
     document.cookie = cookieName + "=" + encodeURIComponent(cookieValue) + 
                       "; " + expires + 
-                      "; path=/; domain=" + domain + 
-                      "; Secure; SameSite=None;";
+                      "; path=/; domain=" + domain;
 })();
 </script>
