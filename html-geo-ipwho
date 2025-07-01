@@ -1,0 +1,33 @@
+<script>
+(function() {
+  if (window.__ipwhoFired) return;
+  window.__ipwhoFired = true;
+
+  fetch('https://ipwho.is/')
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      if (data && data.success) {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: 'geoIpwhoResolved',
+          geo_ip: data.ip || '',
+          geo_country: data.country || '',
+          geo_country_code: data.country_code || '',
+          geo_region: data.region || '',
+          geo_city: data.city || '',
+          geo_latitude: data.latitude || '',
+          geo_longitude: data.longitude || '',
+          geo_postcode: data.postal || ''
+        });
+      } else {
+        var errorMessage = (data && data.message) ? data.message : 'Desconhecido';
+        console.warn('Erro na resposta do ipwho.is:', errorMessage);
+      }
+    })
+    .catch(function(error) {
+      console.warn('Erro na requisição do ipwho.is:', error);
+    });
+})();
+</script>
