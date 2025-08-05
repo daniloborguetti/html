@@ -1,0 +1,158 @@
+<script>
+(function spotifyAudioListenerTag() {
+  // - Edit the list below to setup Progress events detected
+  // percentage values:
+  var spotifyPercentagesToBeDetected = [
+    10, 20, 30, 40, 50, 60, 70, 80, 90, 99
+  ]
+  // - The operation below is needed to ensure the list of
+  // percentages to be detected as progress events follow
+  // the correct format.
+  spotifyPercentagesToBeDetected = (function(arr) {
+    var onlyNumsTruncatedList = arr.filter(function(element) {
+      return typeof element === 'number';
+    }).map(function(element) {
+      return Math.trunc(element);
+    }).filter(function(element) {
+      return element > 0 && element < 100;
+    });
+    var uniqueValuesObject = {};
+    for (var i = 0; i < onlyNumsTruncatedList.length; i++) {
+      uniqueValuesObject[onlyNumsTruncatedList[i]] = true;
+    }
+    var uniqueList = Object.keys(uniqueValuesObject).map(function(key) {
+      return parseInt(key, 10);
+    });
+    uniqueList.sort(function(a, b) {
+      return a - b;
+    });
+    return uniqueList;
+  })(spotifyPercentagesToBeDetected);
+  var minDetectionValue = Math.min.apply(null, spotifyPercentagesToBeDetected);
+
+  // - Check if a calculated percentage value should or
+  // not be detected.
+  function shouldPercentageBeDetected(percent, detectionList) {
+    for (var i = 0; i < detectionList.length; i++) {
+      if (percent >= detectionList[i] && !(detectionList[i+1] && detectionList[i+1] <= percent)) {
+        return { check: true, value: detectionList[i] };
+      }
+    }
+    return { check: false, value: undefined };
+  }
+
+  window.dataLayer = window.dataLayer || [];
+  var spotifyWasPaused = false;
+  var spotifyRegisteredProgress = [];
+  var spotifyLastDuration = 0.0;
+  var spotifyLastURI = '';
+  var spotifyLastEventString = '';
+  sessionStorage.setItem('spotifyLastStatus', '');
+  window.addEventListener('message', function(event) {
+    // Leave if not a Spotify Event
+    if (!(event.origin === 'https://open.spotify.com'))
+      return;
+    var spotifyEventString = event.data.payload
+      && (JSON.stringify(event.data.payload.isPaused)
+      + JSON.stringify(event.data.payload.position)
+      + JSON.stringify(event.data.payload.playingUri)) || '';
+    // Leave if current event is the same as last event, otherwise update
+    if (spotifyEventString === spotifyLastEventString)
+      return;
+    else
+      spotifyLastEventString = spotifyEventString;
+    var audioPercent = Math.trunc((event.data.payload.position / event.data.payload.duration) * 100) || 0;
+    var audioCurrentTime = (event.data.payload.position / 1000) || 0;
+    var audioDuration = (event.data.payload.duration / 1000) || 0;
+    var spotifyURI = event.data.payload.playingURI;
+    var reSpotifyUri = /spotify:([^:]+):([^:]+)/i;
+    var audioData = (function(uri) {
+      var result = { contentType: '', url: '' };
+      if (reSpotifyUri.test(uri)) {
+        var parts = reSpotifyUri.exec(uri);
+        result.contentType = parts && parts[1];
+        result.url = parts && 'https://open.spotify.com/'+parts[1]+'/'+parts[2];
+      }
+      return result;
+    })(spotifyURI);
+    var spotifyEvent = {
+      event: 'spotifyEvent',
+      audioPercent: audioPercent,
+      audioCurrentTime: audioCurrentTime,
+      audioDuration: audioDuration,
+      audioContentType: audioData.contentType,
+      audioUrl: audioData.url,
+      spotifyURI: spotifyURI
+    }
+    // - Detect playback restart
+    if ((sessionStorage.getItem('spotifyLastStatus') === 'complete'
+      && audioData.contentType !== 'episode') || event.data.type === 'playback_started')
+      sessionStorage.setItem('spotifyLastStatus', 'playback_started');
+    // - Detect track rewind or restart
+    if (audioData.contentType === 'track' && audioPercent < minDetectionValue) {
+      spotifyWasPaused = false;
+      spotifyRegisteredProgress = [];
+    }
+    // - Restart Playback Control Variables in case URI or duration has
+    // changed or a complete event has just fired (track change detection
+    // within playlist, album or artist).
+    if ((spotifyURI && spotifyURI !== spotifyLastURI)
+      || event.data.type === 'playback_started'
+      || sessionStorage.getItem('spotifyLastStatus') === 'complete'
+      || (spotifyURI && spotifyURI === spotifyLastURI
+        && Math.trunc(audioDuration) !== Math.trunc(spotifyLastDuration))) {
+      spotifyWasPaused = false;
+      spotifyRegisteredProgress = [];
+    }
+    // 1. Playback updates
+    // 1.1. Playback Start
+    if (spotifyURI && event.data.type === 'playback_started') {
+      spotifyEvent.audioStatus = 'playback_started';
+      window.dataLayer.push(spotifyEvent);
+      spotifyLastURI = spotifyURI;
+      spotifyLastStatus = spotifyEvent.audioStatus;
+      // 1.2. Playback Paused
+    } else if (spotifyURI && event.data.type === 'playback_update' && event.data.payload.isPaused
+      && audioCurrentTime && !spotifyWasPaused) {
+      spotifyEvent.audioStatus = 'playback_paused';
+      window.dataLayer.push(spotifyEvent);
+      spotifyLastURI = spotifyURI;
+      spotifyLastDuration = audioDuration;
+      spotifyWasPaused = true;
+      sessionStorage.setItem('spotifyLastStatus', spotifyEvent.audioStatus);
+      // 1.3. Playback Resumed
+    } else if (spotifyURI && event.data.type === 'playback_update'
+      && !event.data.payload.isPaused && spotifyWasPaused && event.data.payload.position) {
+      spotifyEvent.audioStatus = 'playback_resumed';
+      window.dataLayer.push(spotifyEvent);
+      spotifyLastURI = spotifyURI;
+      spotifyLastDuration = audioDuration;
+      spotifyWasPaused = false;
+      sessionStorage.setItem('spotifyLastStatus', spotifyEvent.audioStatus);
+      // 1.4. Complete
+    } else if (spotifyURI && event.data.type === 'playback_update' && audioDuration === audioCurrentTime
+      && sessionStorage.getItem('spotifyLastStatus') !== 'complete') {
+      spotifyEvent.audioStatus = 'complete';
+      spotifyEvent.audioPercent = 100;
+      window.dataLayer.push(spotifyEvent);
+      spotifyLastURI = spotifyURI;
+      spotifyLastDuration = audioDuration;
+      sessionStorage.setItem('spotifyLastStatus', spotifyEvent.audioStatus);
+    }
+    // - No progress events after a complete event
+    if (sessionStorage.getItem('spotifyLastStatus') === 'complete')
+      return;
+    // 2. Progress Events
+    if (spotifyURI && shouldPercentageBeDetected(audioPercent, spotifyPercentagesToBeDetected).check) {
+      if (!spotifyRegisteredProgress.includes(shouldPercentageBeDetected(audioPercent, spotifyPercentagesToBeDetected).value)) {
+        spotifyRegisteredProgress.push(shouldPercentageBeDetected(audioPercent, spotifyPercentagesToBeDetected).value);
+        spotifyEvent.audioStatus = 'progress';
+        spotifyEvent.audioPercent = shouldPercentageBeDetected(audioPercent, spotifyPercentagesToBeDetected).value;
+        window.dataLayer.push(spotifyEvent);
+        spotifyLastURI = spotifyURI;
+        spotifyLastDuration = audioDuration;
+      }
+    }
+  }, false);
+})();
+</script>
