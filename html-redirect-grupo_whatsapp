@@ -1,0 +1,51 @@
+<script>
+(function(){
+  const CODE = 'SEU CODIGO DO WHATSAPP'; // substitua pelo seu código real
+  const WEB  = 'https://chat.whatsapp.com/' + CODE;
+  const TIMEOUT = 900;
+
+  function isAndroid(){ return /Android/i.test(navigator.userAgent); }
+  function isIOS(){ return /iPhone|iPad|iPod/i.test(navigator.userAgent); }
+
+  function tryOpenApp(){
+    if(isAndroid()){
+      location.href = 'intent://chat.whatsapp.com/' + CODE + '#Intent;package=com.whatsapp;scheme=https;end';
+      setTimeout(function(){ location.href = WEB; }, TIMEOUT);
+      return;
+    }
+
+    if(isIOS()){
+      location.href = 'whatsapp://chat?code=' + CODE;
+      setTimeout(function(){ location.href = WEB; }, TIMEOUT);
+      return;
+    }
+
+    location.href = WEB;
+  }
+
+  function bind(){
+    const sel = document.querySelector('#btn_redirect a, a#btn_redirect, #btn_redirect');
+    if(!sel) return;
+    try { sel.setAttribute('href', WEB); } catch(e){}
+    sel.addEventListener('click', function(evt){
+      evt.preventDefault();
+      tryOpenApp();
+      let opened = false;
+      function onVis(){
+        if(document.hidden || document.visibilityState === 'hidden') opened = true;
+      }
+      document.addEventListener('visibilitychange', onVis);
+      setTimeout(function(){
+        document.removeEventListener('visibilitychange', onVis);
+        if(!opened){
+          location.href = WEB;
+        }
+      }, TIMEOUT + 300);
+    }, {passive:false});
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', bind);
+  } else bind();
+})();
+</script>
