@@ -1,0 +1,319 @@
+<script>
+(function () {
+  // =============== CONFIG ===============
+  var UTM_KEYS = [
+    "utm_source","utm_medium","utm_campaign","utm_term","utm_content","utm_id",
+    "gclid","fbclid","msclkid","ttclid","yclid","twclid"
+  ];
+  var EXTRA_KEYS = ["LeadUserIndex","src"]; 
+  var PERSIST_KEYS = UTM_KEYS.concat(EXTRA_KEYS);
+  // ======================================
+
+  // ---------- Utils ----------
+  function getRootDomain(hostname) {
+    try {
+      var parts = hostname.split('.');
+      if (parts.length >= 3) {
+        var tld2 = parts.slice(-2).join('.');
+        var compounds = ['com.br','org.br','net.br','gov.br','co.uk','com.au'];
+        if (compounds.includes(tld2)) return parts.slice(-3).join('.');
+      }
+      return parts.slice(-2).join('.');
+    } catch(e){ return hostname; }
+  }
+  var domain = "." + getRootDomain(location.hostname);
+  var expires = new Date(Date.now() + 365*24*60*60*1000).toUTCString();
+
+  function getCookie(name){
+    try{
+      var m = document.cookie.match(new RegExp("(?:^|; )" + name.replace(/([.$?*|{}()[\]\\/+^])/g,'\\$1') + "=([^;]*)"));
+      return m ? decodeURIComponent(m[1]) : null;
+    }catch(e){ return null; }
+  }
+  function setCookie(name, value){
+    try{
+      document.cookie = name + "=" + encodeURIComponent(value) +
+        "; expires=" + expires +
+        "; path=/; domain=" + domain +
+        "; SameSite=None; Secure";
+    }catch(e){}
+  }
+
+  function getQueryParams() {
+    var out = {};
+    try {
+      var sp = new URLSearchParams(location.search);
+      sp.forEach(function(v,k){ out[k]=v; });
+    } catch(e){}
+    return out;
+  }
+
+  function readStorage() {
+    var out = {};
+    try {
+      for (var i=0;i<localStorage.length;i++){
+        var k = localStorage.key(i);
+        out[k] = localStorage.getItem(k);
+      }
+    } catch(e){}
+    try {
+      for (var j=0;j<sessionStorage.length;j++){
+        var k2 = sessionStorage.key(j);
+        if (!(k2 in out)) out[k2] = sessionStorage.getItem(k2);
+      }
+    } catch(e){}
+    try {
+      document.cookie.split(';').forEach(function(c){
+        var p = c.split('=');
+        var k = p[0] && p[0].trim();
+        if (k && !(k in out)) out[k] = getCookie(k);
+      });
+    } catch(e){}
+    return out;
+  }
+
+  function persist(k,v){
+    if (v == null || v === "") return;
+    setCookie(k,v);
+    try{ localStorage.setItem(k,v); }catch(e){}
+    try{ sessionStorage.setItem(k,v); }catch(e){}
+  }
+
+  // ---------- Núcleo: criar UTMs + LeadUserIndex ----------
+  function getLeadUserIndex() {
+    return getCookie("LeadUserIndex")
+        || sessionStorage.getItem("LeadUserIndex")
+        || localStorage.getItem("LeadUserIndex");
+  }
+
+  function canonicalParams() {
+    var url = getQueryParams();               // 1) vindo da URL
+    var all = readStorage();                  // 2) fallback do storage/cookies
+    var out = {};
+
+    // Copia as UTMs válidas (URL tem prioridade)
+    UTM_KEYS.forEach(function(k){
+      out[k] = (k in url && url[k]) ? url[k] : (all[k] || null);
+    });
+
+    // LeadUserIndex
+    var idx = (url["LeadUserIndex"] || getLeadUserIndex() || all["LeadUserIndex"] || null);
+    if (idx) {
+      // salva internamente
+      persist("LeadUserIndex", idx);
+      // mas só passa src para URL
+      out["src"] = url["src"] || all["src"] || idx;
+    } else {
+      // Se tiver src, mantém ele
+      var s = url["src"] || all["src"] || null;
+      if (s) {
+        out["src"] = s;
+      }
+    }
+
+    // Remove chaves vazias
+    Object.keys(out).forEach(function(k){ if (out[k]==null || out[k]==="") delete out[k]; });
+    return out;
+  }
+
+  function storeCanonical(params) {
+    Object.keys(params).forEach(function(k){
+      if (PERSIST_KEYS.indexOf(k) > -1) persist(k, params[k]);
+    });
+  }
+
+  // ---------- Propagação ----------
+  function paramsExist(obj){
+    return obj && Object.keys(obj).length > 0;
+  }
+
+  function appendParamsToUrl(url, params) {
+    try {
+      if (!url || typeof url !== "string") return url;
+      if (url.startsWith("#") || url.startsWith("javascript:") || url.startsWith("mailto:") || url.startsWith("tel:")) return url;
+      var u = new URL(url, location.origin);
+      Object.keys(params).forEach(function(k){
+        // só insere UTM’s e src — nunca LeadUserIndex
+        if (k !== "LeadUserIndex" && !u.searchParams.has(k)) {
+          u.searchParams.set(k, params[k]);
+        }
+      });
+      return u.toString();
+    } catch(e){ return url; }
+  }
+
+  function propagateToLinks(params){
+    try{
+      document.querySelectorAll('a[href]').forEach(function(a){
+        var href = a.getAttribute('href');
+        var newHref = appendParamsToUrl(href, params);
+        if (newHref && newHref !== href) a.setAttribute('href', newHref);
+      });
+    }catch(e){}
+  }
+
+  function propagateToForms(params){
+    try{
+      document.querySelectorAll('form').forEach(function(form){
+        Object.keys(params).forEach(function(k){
+          if (k === "LeadUserIndex") return; // não passa no form
+          var inp = form.querySelector('input[name="'+k+'"]');
+          if (!inp) {
+            var hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = k;
+            hidden.value = params[k];
+            form.appendChild(hidden);
+          } else if (inp.value !== params[k]) {
+            inp.value = params[k];
+          }
+        });
+      });
+    }catch(e){}
+  }
+
+  function interceptWindowLocation(params){
+    var assign = window.location.assign ? window.location.assign.bind(window.location) : null;
+    if (assign){
+      window.location.assign = function(url){
+        assign(appendParamsToUrl(url, params));
+      };
+    }
+    var replace = window.location.replace ? window.location.replace.bind(window.location) : null;
+    if (replace){
+      window.location.replace = function(url){
+        replace(appendParamsToUrl(url, params));
+      };
+    }
+  }
+
+  function interceptXHR(params){
+    var XHR = XMLHttpRequest && XMLHttpRequest.prototype;
+    if (!XHR) return;
+    var open = XHR.open, send = XHR.send;
+    XHR.open = function(method, url){
+      this._url = url;
+      return open.apply(this, arguments);
+    };
+    XHR.send = function(data){
+      var self = this;
+      function process(){
+        try{
+          if (self.readyState === 4) {
+            var ct = self.getResponseHeader && self.getResponseHeader('Content-Type') || '';
+            if (ct.indexOf('application/json')>-1 && self.responseText){
+              try{
+                var json = JSON.parse(self.responseText);
+                if (json && typeof json === 'object'){
+                  if (json.redirect_url) json.redirect_url = appendParamsToUrl(json.redirect_url, params);
+                  if (json.data && json.data.redirect_url) json.data.redirect_url = appendParamsToUrl(json.data.redirect_url, params);
+                  Object.defineProperty(self, 'responseText', { configurable:true, get:function(){ return JSON.stringify(json); }});
+                  Object.defineProperty(self, 'response',     { configurable:true, get:function(){ return JSON.stringify(json); }});
+                }
+              }catch(e){}
+            }
+          }
+        }catch(e){}
+      }
+      this.addEventListener('readystatechange', process);
+      return send.apply(this, arguments);
+    };
+  }
+
+  function interceptFetch(params){
+    if (!window.fetch) return;
+    var orig = window.fetch;
+    window.fetch = function(){
+      return orig.apply(this, arguments).then(function(resp){
+        try{
+          var json = resp.json.bind(resp);
+          resp.json = function(){
+            return json().then(function(data){
+              try{
+                if (data && typeof data === 'object'){
+                  if (data.redirect_url) data.redirect_url = appendParamsToUrl(data.redirect_url, params);
+                  if (data.data && data.data.redirect_url) data.data.redirect_url = appendParamsToUrl(data.data.redirect_url, params);
+                }
+              }catch(e){}
+              return data;
+            });
+          };
+        }catch(e){}
+        return resp;
+      });
+    };
+  }
+
+  function elementorHooks(params){
+    if (typeof jQuery === 'undefined') return;
+    jQuery(document).on('submit', '.elementor-form', function(){
+      var form = jQuery(this);
+      Object.keys(params).forEach(function(k){
+        if (k === "LeadUserIndex") return;
+        var existing = form.find('input[name="'+k+'"]');
+        if (existing.length === 0) {
+          form.append('<input type="hidden" name="'+k+'" value="'+params[k]+'">');
+        } else {
+          existing.val(params[k]);
+        }
+      });
+    });
+    jQuery(document).on('submit_success', function(e, resp){
+      try{
+        if (resp && resp.data && typeof resp.data.redirect_url === 'string'){
+          resp.data.redirect_url = appendParamsToUrl(resp.data.redirect_url, params);
+        }
+      }catch(e){}
+    });
+  }
+
+  // ---------- Loop principal ----------
+  var cachedParamsString = "";
+  function runPipeline(){
+    var params = canonicalParams();
+    if (paramsExist(params)) {
+      Object.keys(params).forEach(function(k){ persist(k, params[k]); });
+    }
+
+    var strNow = JSON.stringify(params);
+    if (strNow !== cachedParamsString) {
+      cachedParamsString = strNow;
+      if (paramsExist(params)) {
+        propagateToLinks(params);
+        propagateToForms(params);
+      }
+    }
+
+    requestAnimationFrame(runPipeline);
+  }
+
+  // ---------- Inicialização ----------
+  function init(){
+    var params = canonicalParams();
+    if (paramsExist(params)) {
+      storeCanonical(params);
+      interceptWindowLocation(params);
+      interceptXHR(params);
+      interceptFetch(params);
+      elementorHooks(params);
+      propagateToLinks(params);
+      propagateToForms(params);
+    }
+    try{
+      var mo = new MutationObserver(function(){
+        var p = canonicalParams();
+        if (paramsExist(p)) { propagateToLinks(p); propagateToForms(p); }
+      });
+      mo.observe(document.documentElement, {childList:true, subtree:true, attributes:true, attributeFilter:['href','action','data-settings']});
+    }catch(e){}
+
+    requestAnimationFrame(runPipeline);
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+</script>
