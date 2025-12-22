@@ -1,0 +1,827 @@
+<script>
+(function() {
+    function isAdminPage() {
+        try {
+            var url = window.location.href.toLowerCase();
+            var pathname = window.location.pathname.toLowerCase();
+            
+            var adminPatterns = [
+                '/wp-admin',
+                '/wp-login',
+                'wp-admin/',
+                'wp-login.php',
+                '/admin',
+                '/administrator',
+                '/backend',
+                '/panel',
+                '/dashboard',
+                'action=elementor',
+                'elementor-preview',
+                'elementor_library',
+                'et_fb=1',
+                'et_bfb=1',
+                'fb-edit=1',
+                'builder=true',
+                'builder=visual',
+                'ct_builder=true',
+                'bricks=run',
+                'brizy-edit',
+                'brizy-edit-iframe',
+                'tve=true',
+                'vc_action=',
+                'fl_builder',
+                'page_id=',
+                'preview=true',
+                'preview_id=',
+                'customize_changeset_uuid',
+                '/customize.php',
+                'cornerstone=1',
+                'cs-render=1',
+                'ct_render=1',
+                'oxy_user_role',
+                'oxygen_iframe=true',
+                'zion_builder',
+                'is_frame=true'
+            ];
+            
+            for (var i = 0; i < adminPatterns.length; i++) {
+                if (url.indexOf(adminPatterns[i]) > -1 || pathname.indexOf(adminPatterns[i]) > -1) {
+                    return true;
+                }
+            }
+            
+            if (window.elementorFrontend && window.elementorFrontend.isEditMode && window.elementorFrontend.isEditMode()) {
+                return true;
+            }
+            
+            if (window.elementor || window.ETBuilderBackend || window.FLBuilder || window.vc_iframe || 
+                window.Cornerstone || window.CTFrontendBuilder) {
+                return true;
+            }
+            
+            if (document.body && document.body.classList) {
+                var adminClasses = [
+                    'elementor-editor-active',
+                    'et-fb',
+                    'et-bfb',
+                    'fl-builder-edit',
+                    'vc_editor',
+                    'brizy-editor',
+                    'tve_editor_page',
+                    'ct-builder',
+                    'bricks-is-frontend',
+                    'oxygen-builder-body',
+                    'zion-builder-active',
+                    'wp-admin',
+                    'wp-customizer'
+                ];
+                
+                for (var i = 0; i < adminClasses.length; i++) {
+                    if (document.body.classList.contains(adminClasses[i])) {
+                        return true;
+                    }
+                }
+            }
+            
+            if (document.querySelector('.elementor-editor-active, .et-fb, .fl-builder-edit, .vc_editor, .brizy-editor, .ct-builder, .bricks-is-frontend, .oxygen-builder-body')) {
+                return true;
+            }
+            
+            return false;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    if (isAdminPage()) {
+        return;
+    }
+
+    var lastUrlParams = '';
+    var processingRedirect = false;
+    var hasInitialParams = false;
+    
+    function getIndex() {
+        return Date.now().toString();
+    }
+    
+    function getRootDomain(hostname) {
+        var parts = hostname.split('.');
+        if (parts.length >= 3) {
+            var tld = parts.slice(-2).join('.');
+            var compoundTLDs = ['com.br', 'org.br', 'net.br', 'gov.br', 'co.uk', 'com.au'];
+            if (compoundTLDs.includes(tld)) {
+                return parts.slice(-3).join('.');
+            }
+        }
+        return parts.slice(-2).join('.');
+    }
+    
+    var domain = "." + getRootDomain(window.location.hostname);
+    var expires = new Date(new Date().getTime() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+    
+    function getCookie(name) {
+        try {
+            var cookies = "; " + document.cookie;
+            var parts = cookies.split("; " + name + "=");
+            if (parts.length === 2) {
+                return parts.pop().split(";").shift();
+            }
+        } catch (e) {}
+        return null;
+    }
+    
+    function setCookie(name, value) {
+        try {
+            document.cookie = name + "=" + value + 
+                "; SameSite=None; Secure" +
+                "; expires=" + expires +
+                "; path=/; domain=" + domain;
+        } catch (e) {}
+    }
+    
+    function deleteCookie(name) {
+        try {
+            document.cookie = name + "=; SameSite=None; Secure; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=" + domain;
+        } catch (e) {}
+    }
+    
+    function setLeadUserIndex(value) {
+        try {
+            try {
+                sessionStorage.setItem('LeadUserIndex', value);
+            } catch (e) {}
+            
+            try {
+                localStorage.setItem('LeadUserIndex', value);
+            } catch (e) {}
+            
+            setCookie('LeadUserIndex', value);
+        } catch (e) {}
+    }
+    
+    function getLeadUserIndex() {
+        try {
+            try {
+                var sessionValue = sessionStorage.getItem('LeadUserIndex');
+                if (sessionValue) return sessionValue;
+            } catch (e) {}
+            
+            try {
+                var localValue = localStorage.getItem('LeadUserIndex');
+                if (localValue) return localValue;
+            } catch (e) {}
+            
+            var cookieValue = getCookie('LeadUserIndex');
+            if (cookieValue) return cookieValue;
+        } catch (e) {}
+        
+        return null;
+    }
+    
+    function getOrSetLeadUserIndex() {
+        try {
+            var existingIndex = getLeadUserIndex();
+            
+            if (existingIndex) {
+                setLeadUserIndex(existingIndex);
+                return existingIndex;
+            }
+            
+            var newIndex = getIndex();
+            setLeadUserIndex(newIndex);
+            return newIndex;
+        } catch (e) {
+            return getIndex();
+        }
+    }
+    
+    function setTrackingParams(params) {
+        try {
+            var stringified = JSON.stringify(params);
+            
+            try {
+                sessionStorage.setItem('TrackingParams', stringified);
+            } catch (e) {}
+            
+            try {
+                localStorage.setItem('TrackingParams', stringified);
+            } catch (e) {}
+            
+            setCookie('TrackingParams', stringified);
+        } catch (e) {}
+    }
+    
+    function getTrackingParams() {
+        try {
+            try {
+                var sessionValue = sessionStorage.getItem('TrackingParams');
+                if (sessionValue) return JSON.parse(sessionValue);
+            } catch (e) {}
+            
+            try {
+                var localValue = localStorage.getItem('TrackingParams');
+                if (localValue) return JSON.parse(localValue);
+            } catch (e) {}
+            
+            var cookieValue = getCookie('TrackingParams');
+            if (cookieValue) {
+                try {
+                    return JSON.parse(cookieValue);
+                } catch (e) {}
+            }
+        } catch (e) {}
+        
+        return null;
+    }
+    
+    function clearTrackingParams() {
+        try {
+            try {
+                sessionStorage.removeItem('TrackingParams');
+            } catch (e) {}
+            
+            try {
+                localStorage.removeItem('TrackingParams');
+            } catch (e) {}
+            
+            deleteCookie('TrackingParams');
+        } catch (e) {}
+    }
+    
+    function isEncrypted(value) {
+        if (!value || typeof value !== 'string') return false;
+        
+        try {
+            var encryptedPatterns = [
+                /^[A-Za-z0-9+\/=]{40,}$/,
+                /^[A-Fa-f0-9]{32,}$/,
+                /^[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}/,
+                /^ey[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/,
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+                /%[0-9A-F]{2}.*%[0-9A-F]{2}.*%[0-9A-F]{2}/i
+            ];
+            
+            for (var i = 0; i < encryptedPatterns.length; i++) {
+                if (encryptedPatterns[i].test(value)) {
+                    return true;
+                }
+            }
+            
+            var hasUpperAndLower = /[a-z]/.test(value) && /[A-Z]/.test(value);
+            var hasNumbers = /[0-9]/.test(value);
+            var hasSpecialChars = /[+\/=_-]/.test(value);
+            var isLongEnough = value.length > 30;
+            var hasNoSpaces = value.indexOf(' ') === -1;
+            
+            if (hasUpperAndLower && hasNumbers && hasSpecialChars && isLongEnough && hasNoSpaces) {
+                return true;
+            }
+        } catch (e) {}
+        
+        return false;
+    }
+    
+    function getUrlParams() {
+        var params = {};
+        try {
+            var searchParams = new URLSearchParams(window.location.search);
+            searchParams.forEach(function(value, key) {
+                if (key !== 'src' && !isEncrypted(value)) {
+                    params[key] = value;
+                }
+            });
+        } catch(e) {}
+        return params;
+    }
+    
+    function getAllQueryParams() {
+        return getUrlParams();
+    }
+    
+    function checkUrlChange() {
+        var currentParams = window.location.search;
+        if (currentParams !== lastUrlParams) {
+            lastUrlParams = currentParams;
+            captureAndStoreParams();
+            return true;
+        }
+        return false;
+    }
+    
+    function captureAndStoreParams() {
+        var urlParams = getAllQueryParams();
+        var urlParamKeys = Object.keys(urlParams);
+        
+        if (urlParamKeys.length > 0) {
+            hasInitialParams = true;
+            
+            var hasUtm = false;
+            for (var key in urlParams) {
+                if (urlParams.hasOwnProperty(key) && key.indexOf('utm_') === 0) {
+                    hasUtm = true;
+                    break;
+                }
+            }
+            
+            if (hasUtm) {
+                setTrackingParams(urlParams);
+            }
+        }
+    }
+    
+    function getStoredParams() {
+        if (!hasInitialParams) {
+            return {};
+        }
+        
+        var urlParams = getUrlParams();
+        
+        if (Object.keys(urlParams).length > 0) {
+            return urlParams;
+        }
+        
+        var storedParams = getTrackingParams();
+        return storedParams || {};
+    }
+    
+    function buildSrcParam() {
+        var leadUserIndex = getOrSetLeadUserIndex();
+        
+        return {
+            'src': leadUserIndex
+        };
+    }
+    
+    function appendParamsToUrl(url) {
+        if (!url || processingRedirect || !hasInitialParams) return url;
+        
+        try {
+            if (typeof url !== 'string') return url;
+            if (url.startsWith('#') || url.startsWith('javascript:') || url.startsWith('mailto:') || url.startsWith('tel:')) return url;
+            
+            var params = getStoredParams();
+            
+            var urlObj = new URL(url, window.location.origin);
+            
+            var srcParam = buildSrcParam();
+            
+            Object.keys(params).forEach(function(key) {
+                if (!urlObj.searchParams.has(key)) {
+                    urlObj.searchParams.set(key, params[key]);
+                }
+            });
+            
+            Object.keys(srcParam).forEach(function(key) {
+                if (!urlObj.searchParams.has(key)) {
+                    urlObj.searchParams.set(key, srcParam[key]);
+                }
+            });
+            
+            return urlObj.toString();
+        } catch(e) {
+            return url;
+        }
+    }
+    
+    function deepProxyObject(obj, depth) {
+        if (depth === undefined) depth = 0;
+        if (depth > 10 || !hasInitialParams) return obj;
+        if (!obj || typeof obj !== 'object') return obj;
+        
+        return new Proxy(obj, {
+            get: function(target, prop, receiver) {
+                var value = Reflect.get(target, prop, receiver);
+                
+                if (prop === 'redirect_url' || prop === 'redirectUrl' || prop === 'redirect') {
+                    if (typeof value === 'string') {
+                        value = appendParamsToUrl(value);
+                        try {
+                            target[prop] = value;
+                        } catch(e) {}
+                    }
+                }
+                
+                if (value && typeof value === 'object' && !(value instanceof Date) && !(value instanceof RegExp)) {
+                    return deepProxyObject(value, depth + 1);
+                }
+                
+                return value;
+            },
+            set: function(target, prop, value, receiver) {
+                if (prop === 'redirect_url' || prop === 'redirectUrl' || prop === 'redirect') {
+                    if (typeof value === 'string') {
+                        value = appendParamsToUrl(value);
+                    }
+                }
+                return Reflect.set(target, prop, value, receiver);
+            }
+        });
+    }
+    
+    function deepScanAndModifyUrls(obj, visited) {
+        if (!visited) visited = new WeakSet();
+        if (!obj || typeof obj !== 'object' || visited.has(obj) || !hasInitialParams) return;
+        
+        visited.add(obj);
+        
+        try {
+            Object.keys(obj).forEach(function(key) {
+                try {
+                    if (typeof obj[key] === 'string' && (obj[key].indexOf('http') === 0 || obj[key].indexOf('/') === 0)) {
+                        if (key.toLowerCase().indexOf('redirect') > -1 || key.toLowerCase().indexOf('url') > -1) {
+                            var newUrl = appendParamsToUrl(obj[key]);
+                            if (newUrl !== obj[key]) {
+                                obj[key] = newUrl;
+                            }
+                        }
+                    }
+                    
+                    if (obj[key] && typeof obj[key] === 'object') {
+                        deepScanAndModifyUrls(obj[key], visited);
+                    }
+                } catch(e) {}
+            });
+        } catch(e) {}
+    }
+    
+    function interceptWindowLocation() {
+        var originalAssign = window.location.assign;
+        if (originalAssign) {
+            window.location.assign = function(url) {
+                if (url && hasInitialParams) {
+                    url = appendParamsToUrl(url);
+                }
+                return originalAssign.call(window.location, url);
+            };
+        }
+        
+        var originalReplace = window.location.replace;
+        if (originalReplace) {
+            window.location.replace = function(url) {
+                if (url && hasInitialParams) {
+                    url = appendParamsToUrl(url);
+                }
+                return originalReplace.call(window.location, url);
+            };
+        }
+    }
+    
+    function interceptXHR() {
+        var XHR = XMLHttpRequest.prototype;
+        var open = XHR.open;
+        var send = XHR.send;
+        
+        XHR.open = function(method, url) {
+            this._url = url;
+            this._method = method;
+            return open.apply(this, arguments);
+        };
+        
+        XHR.send = function(data) {
+            var self = this;
+            var oldOnReadyStateChange = this.onreadystatechange;
+            var oldOnLoad = this.onload;
+            
+            var processResponse = function() {
+                if (self.readyState === 4 && !processingRedirect && hasInitialParams) {
+                    try {
+                        var contentType = self.getResponseHeader('Content-Type') || '';
+                        if (contentType.indexOf('application/json') > -1 && self.responseText) {
+                            try {
+                                var jsonData = JSON.parse(self.responseText);
+                                var modified = false;
+                                
+                                if (jsonData && jsonData.data && typeof jsonData.data.redirect_url === 'string') {
+                                    var newUrl = appendParamsToUrl(jsonData.data.redirect_url);
+                                    if (newUrl !== jsonData.data.redirect_url) {
+                                        jsonData.data.redirect_url = newUrl;
+                                        modified = true;
+                                    }
+                                }
+                                
+                                if (jsonData && typeof jsonData.redirect_url === 'string') {
+                                    var newUrl = appendParamsToUrl(jsonData.redirect_url);
+                                    if (newUrl !== jsonData.redirect_url) {
+                                        jsonData.redirect_url = newUrl;
+                                        modified = true;
+                                    }
+                                }
+                                
+                                if (modified) {
+                                    try {
+                                        Object.defineProperty(self, 'responseText', {
+                                            writable: true,
+                                            configurable: true,
+                                            value: JSON.stringify(jsonData)
+                                        });
+                                        Object.defineProperty(self, 'response', {
+                                            writable: true,
+                                            configurable: true,
+                                            value: JSON.stringify(jsonData)
+                                        });
+                                    } catch(e) {}
+                                }
+                            } catch(parseError) {}
+                        }
+                    } catch(e) {}
+                }
+            };
+            
+            this.onreadystatechange = function() {
+                processResponse();
+                if (oldOnReadyStateChange) {
+                    return oldOnReadyStateChange.apply(this, arguments);
+                }
+            };
+            
+            this.onload = function() {
+                processResponse();
+                if (oldOnLoad) {
+                    return oldOnLoad.apply(this, arguments);
+                }
+            };
+            
+            this.addEventListener('load', processResponse);
+            this.addEventListener('readystatechange', processResponse);
+            
+            return send.apply(this, arguments);
+        };
+    }
+    
+    function interceptFetch() {
+        if (!window.fetch) return;
+        
+        var originalFetch = window.fetch;
+        window.fetch = function() {
+            var args = Array.prototype.slice.call(arguments);
+            
+            return originalFetch.apply(this, args).then(function(response) {
+                if (processingRedirect || !hasInitialParams) return response;
+                
+                var originalJson = response.json;
+                response.json = function() {
+                    return originalJson.call(response).then(function(data) {
+                        try {
+                            if (data && data.data && typeof data.data.redirect_url === 'string') {
+                                data.data.redirect_url = appendParamsToUrl(data.data.redirect_url);
+                            }
+                            if (data && typeof data.redirect_url === 'string') {
+                                data.redirect_url = appendParamsToUrl(data.redirect_url);
+                            }
+                        } catch(e) {}
+                        
+                        return data;
+                    });
+                };
+                
+                return response;
+            });
+        };
+    }
+    
+    function interceptJQueryAjax() {
+        if (typeof jQuery === 'undefined') return;
+        
+        var originalAjax = jQuery.ajax;
+        jQuery.ajax = function(url, options) {
+            if (typeof url === 'object') {
+                options = url;
+            }
+            
+            var originalSuccess = options && options.success;
+            if (options && hasInitialParams) {
+                options.success = function(data) {
+                    try {
+                        if (data && data.data && typeof data.data.redirect_url === 'string') {
+                            data.data.redirect_url = appendParamsToUrl(data.data.redirect_url);
+                        }
+                        if (data && typeof data.redirect_url === 'string') {
+                            data.redirect_url = appendParamsToUrl(data.redirect_url);
+                        }
+                    } catch(e) {}
+                    
+                    if (originalSuccess) {
+                        return originalSuccess.apply(this, arguments);
+                    }
+                };
+            }
+            
+            return originalAjax.call(jQuery, url, options);
+        };
+        
+        jQuery(document).ajaxSuccess(function(event, xhr, settings, data) {
+            if (processingRedirect || !hasInitialParams) return;
+            
+            try {
+                if (data && data.data && typeof data.data.redirect_url === 'string') {
+                    var newUrl = appendParamsToUrl(data.data.redirect_url);
+                    if (newUrl !== data.data.redirect_url && newUrl) {
+                        processingRedirect = true;
+                        setTimeout(function() {
+                            window.location.href = newUrl;
+                        }, 100);
+                    }
+                }
+            } catch(e) {}
+        });
+        
+        jQuery(document).ajaxComplete(function(event, xhr, settings) {
+            if (processingRedirect || !hasInitialParams) return;
+            
+            try {
+                var contentType = xhr.getResponseHeader('Content-Type') || '';
+                if (contentType.indexOf('application/json') > -1 && xhr.responseText) {
+                    var response = JSON.parse(xhr.responseText);
+                    
+                    if (response && response.data && typeof response.data.redirect_url === 'string') {
+                        var newUrl = appendParamsToUrl(response.data.redirect_url);
+                        if (newUrl !== response.data.redirect_url && newUrl) {
+                            processingRedirect = true;
+                            setTimeout(function() {
+                                window.location.href = newUrl;
+                            }, 100);
+                        }
+                    }
+                }
+            } catch(e) {}
+        });
+    }
+    
+    function setupElementorHooks() {
+        if (typeof jQuery === 'undefined') return;
+        
+        jQuery(document).on('submit', '.elementor-form', function(e) {
+            if (!hasInitialParams) return;
+            
+            var form = jQuery(this);
+            var params = getStoredParams();
+            var srcParam = buildSrcParam();
+            
+            var allParams = Object.assign({}, params, srcParam);
+            
+            Object.keys(allParams).forEach(function(key) {
+                var existing = form.find('input[name="' + key + '"]');
+                if (existing.length === 0) {
+                    form.append('<input type="hidden" name="' + key + '" value="' + allParams[key] + '">');
+                } else {
+                    existing.val(allParams[key]);
+                }
+            });
+        });
+        
+        jQuery(document).on('submit_success', function(e, response) {
+            if (!hasInitialParams) return;
+            
+            try {
+                if (response && response.data && typeof response.data.redirect_url === 'string') {
+                    response.data.redirect_url = appendParamsToUrl(response.data.redirect_url);
+                }
+            } catch(e) {}
+        });
+        
+        if (window.elementorFrontend) {
+            try {
+                window.elementorFrontend.hooks.addAction('frontend/element_ready/form.default', function($scope) {
+                    $scope.find('.elementor-form').on('submit', function(e) {
+                        if (!hasInitialParams) return;
+                        
+                        var form = jQuery(this);
+                        var params = getStoredParams();
+                        var srcParam = buildSrcParam();
+                        
+                        var allParams = Object.assign({}, params, srcParam);
+                        
+                        Object.keys(allParams).forEach(function(key) {
+                            var existing = form.find('input[name="' + key + '"]');
+                            if (existing.length === 0) {
+                                form.append('<input type="hidden" name="' + key + '" value="' + allParams[key] + '">');
+                            } else {
+                                existing.val(allParams[key]);
+                            }
+                        });
+                    });
+                });
+            } catch(e) {}
+        }
+    }
+    
+    function propagateParamsToLinks() {
+        if (!hasInitialParams) return;
+        
+        try {
+            var links = document.querySelectorAll('a[href]');
+            links.forEach(function(link) {
+                var href = link.getAttribute('href');
+                if (href && !href.startsWith('#') && !href.startsWith('javascript:') && !href.startsWith('mailto:') && !href.startsWith('tel:')) {
+                    var newHref = appendParamsToUrl(href);
+                    if (newHref !== href && newHref) {
+                        link.setAttribute('href', newHref);
+                    }
+                }
+            });
+        } catch(e) {}
+    }
+    
+    function propagateParamsToForms() {
+        if (!hasInitialParams) return;
+        
+        try {
+            var forms = document.querySelectorAll('form');
+            forms.forEach(function(form) {
+                var params = getStoredParams();
+                var srcParam = buildSrcParam();
+                
+                var allParams = Object.assign({}, params, srcParam);
+                
+                Object.keys(allParams).forEach(function(key) {
+                    var existing = form.querySelector('input[name="' + key + '"]');
+                    if (!existing) {
+                        var input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = allParams[key];
+                        form.appendChild(input);
+                    } else if (existing.value !== allParams[key]) {
+                        existing.value = allParams[key];
+                    }
+                });
+            });
+        } catch(e) {}
+    }
+    
+    function syncAll() {
+        checkUrlChange();
+    }
+    
+    function loopSync() {
+        try {
+            syncAll();
+            propagateParamsToLinks();
+            propagateParamsToForms();
+            
+            if (hasInitialParams) {
+                if (window.elementorProFrontend) {
+                    deepScanAndModifyUrls(window.elementorProFrontend);
+                }
+                if (window.elementorFrontend) {
+                    deepScanAndModifyUrls(window.elementorFrontend);
+                }
+                if (window.elementorFrontendConfig) {
+                    deepScanAndModifyUrls(window.elementorFrontendConfig);
+                }
+            }
+        } catch(e) {}
+        
+        requestAnimationFrame(loopSync);
+    }
+    
+    function initialize() {
+        try {
+            getOrSetLeadUserIndex();
+            captureAndStoreParams();
+            syncAll();
+            
+            interceptWindowLocation();
+            interceptXHR();
+            interceptFetch();
+            interceptJQueryAjax();
+            setupElementorHooks();
+            
+            setTimeout(function() {
+                loopSync();
+            }, 100);
+            
+            var observer = new MutationObserver(function(mutations) {
+                try {
+                    propagateParamsToForms();
+                } catch(e) {}
+            });
+            
+            if (document.body) {
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: ['href', 'src', 'action', 'data-settings']
+                });
+            }
+            
+            window.addEventListener('popstate', function() {
+                setTimeout(function() {
+                    try {
+                        checkUrlChange();
+                        syncAll();
+                    } catch(e) {}
+                }, 10);
+            });
+        } catch(e) {}
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+        initialize();
+    }
+})();
+</script>
