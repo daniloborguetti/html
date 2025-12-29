@@ -1,51 +1,125 @@
 <script>
-    const prefix = ["https://checkout.com.br"];
+(function () {
+  // ===== CONFIG =====
+  var prefix = ["https://checkout.com.br"];
+  var MAX_RETRIES = 100; // 100 * 100ms = 10s
+  var RETRY_MS = 100;
+  // ==================
 
-    function getParams() {
-        const url = new URL(window.top.location.href);
-        let paramsString = "";
-        
-        if (url) {
-            const utmSource = url.searchParams.get("utm_source") || "";
-            const utmMedium = url.searchParams.get("utm_medium") || "";
-            const utmCampaign = url.searchParams.get("utm_campaign") || "";
-            const utmContent = url.searchParams.get("utm_content") || "";
-            const fbclid = url.searchParams.get("fbclid") || "";
+  function safeDecode(v) {
+    try { return decodeURIComponent(v || ""); } catch (e) { return v || ""; }
+  }
 
-            if (url.search) {
-                paramsString = `&sck=${utmSource}|${utmMedium}|${utmCampaign}|${utmContent}`;
-            }
-            console.log(paramsString);
+  function getQueryParam(name) {
+    // Lê do TOP (quando existir), senão cai no window atual
+    var href = "";
+    try { href = window.top.location.href; } catch (e) { href = window.location.href; }
+
+    var qIndex = href.indexOf("?");
+    if (qIndex === -1) return "";
+    var query = href.substring(qIndex + 1);
+    var hashIndex = query.indexOf("#");
+    if (hashIndex !== -1) query = query.substring(0, hashIndex);
+
+    var parts = query.split("&");
+    for (var i = 0; i < parts.length; i++) {
+      var kv = parts[i].split("=");
+      if (kv[0] === name) return safeDecode(kv.slice(1).join("="));
+    }
+    return "";
+  }
+
+  function getParams() {
+    var utmSource = getQueryParam("utm_source") || "";
+    var utmMedium = getQueryParam("utm_medium") || "";
+    var utmCampaign = getQueryParam("utm_campaign") || "";
+    var utmContent = getQueryParam("utm_content") || "";
+    var fbclid = getQueryParam("fbclid") || ""; // mantido caso você queira usar depois
+
+    // Só adiciona sck se existir qualquer uma das UTMs (ou fbclid, se preferir)
+    if (utmSource || utmMedium || utmCampaign || utmContent || fbclid) {
+      return "&sck=" + encodeURIComponent(utmSource + "|" + utmMedium + "|" + utmCampaign + "|" + utmContent);
+    }
+    return "";
+  }
+
+  function getCookie(name) {
+    var match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
+    return match ? match[2] : null;
+  }
+
+  function buildUrlParamsWithUtmTerm(leadUserIndex) {
+    var search = window.location.search || "";
+    if (search.indexOf("?") === 0) search = search.substring(1);
+
+    var params = search ? search.split("&") : [];
+    var hasUtmTerm = false;
+
+    for (var i = 0; i < params.length; i++) {
+      if (params[i].indexOf("utm_term=") === 0) {
+        params[i] = "utm_term=" + encodeURIComponent(leadUserIndex);
+        hasUtmTerm = true;
+        break;
+      }
+    }
+    if (!hasUtmTerm) {
+      params.push("utm_term=" + encodeURIComponent(leadUserIndex));
+    }
+
+    // Remove entradas vazias
+    var cleaned = [];
+    for (var j = 0; j < params.length; j++) {
+      if (params[j]) cleaned.push(params[j]);
+    }
+
+    return cleaned.join("&");
+  }
+
+  function updateLinks(tryCount) {
+    tryCount = tryCount || 0;
+
+    var leadUserIndex = getCookie("LeadUserIndex");
+    if (!leadUserIndex) {
+      try {
+        leadUserIndex = sessionStorage.getItem("LeadUserIndex");
+      } catch (e) {}
+    }
+
+    if (leadUserIndex) {
+      var urlParamsStr = buildUrlParamsWithUtmTerm(leadUserIndex);
+      var extraSck = getParams();
+
+      var links = document.querySelectorAll("a");
+      for (var i = 0; i < links.length; i++) {
+        var link = links[i];
+        if (!link || !link.href) continue;
+
+        for (var k = 0; k < prefix.length; k++) {
+          var p = prefix[k];
+          if (link.href.indexOf(p) !== -1) {
+            var separator = link.href.indexOf("?") !== -1 ? "&" : "?";
+            link.href = link.href + separator + urlParamsStr + extraSck;
+            break;
+          }
         }
-
-        return paramsString;
+      }
+      return;
     }
 
-    function getCookie(name) {
-        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-        return match ? match[2] : null;
+    // retry
+    if (tryCount < MAX_RETRIES) {
+      setTimeout(function () {
+        updateLinks(tryCount + 1);
+      }, RETRY_MS);
     }
+  }
 
-    function updateLinks() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const leadUserIndex = getCookie("LeadUserIndex") || sessionStorage.getItem("LeadUserIndex");
-
-        if (leadUserIndex) {
-            urlParams.append("utm_term", leadUserIndex);
-
-            document.querySelectorAll("a").forEach(function(link) {
-                for (const p of prefix) {
-                    if (link.href.includes(p)) {
-                        const separator = link.href.includes("?") ? "&" : "?";
-                        link.href += separator + urlParams.toString() + getParams();
-                    }
-                }
-            });
-        } else {
-            // Tenta novamente após 100ms se o LeadUserIndex ainda não estiver presente
-            setTimeout(updateLinks, 100);
-        }
-    }
-
-    window.addEventListener('load', updateLinks);
+  if (window.addEventListener) {
+    window.addEventListener("load", function () { updateLinks(0); });
+  } else if (window.attachEvent) {
+    window.attachEvent("onload", function () { updateLinks(0); });
+  } else {
+    window.onload = function () { updateLinks(0); };
+  }
+})();
 </script>
