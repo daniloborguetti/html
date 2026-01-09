@@ -7,138 +7,72 @@
     try {
       var url = window.location.href.toLowerCase();
       var pathname = window.location.pathname.toLowerCase();
-      
+
       var adminPatterns = [
-        '/wp-admin',
-        '/wp-login',
-        'wp-admin/',
-        'wp-login.php',
-        '/admin',
-        '/administrator',
-        '/backend',
-        '/panel',
-        '/dashboard',
-        'action=elementor',
-        'elementor-preview',
-        'elementor_library',
-        'et_fb=1',
-        'et_bfb=1',
-        'fb-edit=1',
-        'builder=true',
-        'builder=visual',
-        'ct_builder=true',
-        'bricks=run',
-        'brizy-edit',
-        'brizy-edit-iframe',
-        'tve=true',
-        'vc_action=',
-        'fl_builder',
-        'page_id=',
-        'preview=true',
-        'preview_id=',
-        'customize_changeset_uuid',
-        '/customize.php',
-        'cornerstone=1',
-        'cs-render=1',
-        'ct_render=1',
-        'oxy_user_role',
-        'oxygen_iframe=true',
-        'zion_builder',
-        'is_frame=true'
+        '/wp-admin','/wp-login','wp-admin/','wp-login.php','/admin','/administrator','/backend','/panel','/dashboard',
+        'action=elementor','elementor-preview','elementor_library',
+        'et_fb=1','et_bfb=1','fb-edit=1',
+        'builder=true','builder=visual','ct_builder=true','bricks=run',
+        'brizy-edit','brizy-edit-iframe',
+        'tve=true','vc_action=','fl_builder',
+        'page_id=','preview=true','preview_id=','customize_changeset_uuid','/customize.php',
+        'cornerstone=1','cs-render=1','ct_render=1',
+        'oxy_user_role','oxygen_iframe=true',
+        'zion_builder','is_frame=true'
       ];
-      
+
       for (var i = 0; i < adminPatterns.length; i++) {
         if (url.indexOf(adminPatterns[i]) > -1 || pathname.indexOf(adminPatterns[i]) > -1) {
           return true;
         }
       }
-      
-      if (window.elementorFrontend && window.elementorFrontend.isEditMode && window.elementorFrontend.isEditMode()) {
-        return true;
-      }
-      
-      if (window.elementor) {
-        return true;
-      }
-      
-      if (window.ETBuilderBackend) {
-        return true;
-      }
-      
-      if (window.FLBuilder) {
-        return true;
-      }
-      
-      if (window.vc_iframe) {
-        return true;
-      }
-      
-      if (window.Cornerstone) {
-        return true;
-      }
-      
-      if (window.CTFrontendBuilder) {
-        return true;
-      }
-      
+
+      if (window.elementorFrontend && window.elementorFrontend.isEditMode && window.elementorFrontend.isEditMode()) return true;
+      if (window.elementor) return true;
+      if (window.ETBuilderBackend) return true;
+      if (window.FLBuilder) return true;
+      if (window.vc_iframe) return true;
+      if (window.Cornerstone) return true;
+      if (window.CTFrontendBuilder) return true;
+
       if (document.body && document.body.classList) {
+
         var adminClasses = [
-          'elementor-editor-active',
-          'et-fb',
-          'et-bfb',
-          'fl-builder-edit',
-          'vc_editor',
-          'brizy-editor',
-          'tve_editor_page',
-          'ct-builder',
-          'bricks-is-frontend',
-          'oxygen-builder-body',
-          'zion-builder-active',
-          'wp-admin',
-          'wp-customizer'
+          'elementor-editor-active','et-fb','et-bfb','fl-builder-edit','vc_editor','brizy-editor','tve_editor_page',
+          'ct-builder','bricks-is-frontend','oxygen-builder-body','zion-builder-active','wp-admin','wp-customizer'
         ];
-        
-        for (var i = 0; i < adminClasses.length; i++) {
-          if (document.body.classList.contains(adminClasses[i])) {
-            return true;
-          }
+
+        for (var j = 0; j < adminClasses.length; j++) {
+          if (document.body.classList.contains(adminClasses[j])) return true;
         }
       }
-      
+
       if (document.querySelector('.elementor-editor-active, .et-fb, .fl-builder-edit, .vc_editor, .brizy-editor, .ct-builder, .bricks-is-frontend, .oxygen-builder-body')) {
         return true;
       }
-      
+
       return false;
     } catch (e) {
       return false;
     }
   }
 
-  if (isAdminPage()) {
-    return;
-  }
+  if (isAdminPage()) return;
 
-  function getIndex() {
-    return Date.now().toString();
-  }
+  function getIndex() { return Date.now().toString(); }
 
   function getRootDomain(hostname) {
     try {
       var parts = hostname.split('.');
       if (parts.length >= 3) {
         var tld = parts.slice(-2).join('.');
-        var compoundTLDs = ['com.br', 'org.br', 'net.br', 'gov.br', 'co.uk', 'com.au'];
+        var compoundTLDs = ['com.br','org.br','net.br','gov.br','co.uk','com.au'];
         for (var i = 0; i < compoundTLDs.length; i++) {
-          if (compoundTLDs[i] === tld) {
-            return parts.slice(-3).join('.');
-          }
+          if (compoundTLDs[i] === tld) return parts.slice(-3).join('.');
         }
       }
       return parts.slice(-2).join('.');
-    } catch (e) {
-      return hostname;
-    }
+    } catch (e) { return hostname; }
   }
 
   function setCookie(name, value) {
@@ -147,9 +81,9 @@
       var cookieDomain = "." + domain;
       var expires = new Date(new Date().getTime() + 365 * 24 * 60 * 1000).toUTCString();
       document.cookie = name + "=" + value +
-                        "; SameSite=None; Secure" +
-                        "; expires=" + expires +
-                        "; path=/; domain=" + cookieDomain;
+        "; SameSite=None; Secure" +
+        "; expires=" + expires +
+        "; path=/; domain=" + cookieDomain;
     } catch (e) {}
   }
 
@@ -175,214 +109,133 @@
   function getLeadUserIndex() {
     try {
       if (window.LeadUserIndex) return window.LeadUserIndex;
-      
-      var sessionValue = sessionStorage.getItem('LeadUserIndex');
-      if (sessionValue) return sessionValue;
-      
-      var localValue = localStorage.getItem('LeadUserIndex');
-      if (localValue) return localValue;
-      
-      var cookieValue = getCookie('LeadUserIndex');
-      if (cookieValue) return cookieValue;
+      var sessionValue = sessionStorage.getItem('LeadUserIndex'); if (sessionValue) return sessionValue;
+      var localValue = localStorage.getItem('LeadUserIndex'); if (localValue) return localValue;
+      var cookieValue = getCookie('LeadUserIndex'); if (cookieValue) return cookieValue;
     } catch (e) {}
-    
     return null;
   }
 
   function getOrSetIndex() {
     try {
       var existingIndex = getLeadUserIndex();
-      if (existingIndex) {
-        setLeadUserIndex(existingIndex);
-        return existingIndex;
-      }
-      
+      if (existingIndex) { setLeadUserIndex(existingIndex); return existingIndex; }
       var newIndex = getIndex();
       setLeadUserIndex(newIndex);
       return newIndex;
-    } catch (e) {
-      return getIndex();
-    }
+    } catch (e) { return getIndex(); }
   }
 
   function getCurrentUrlUtms() {
     try {
       var utms = {};
       var urlParams = new URLSearchParams(window.location.search);
-      
-      urlParams.forEach(function(value, key) {
-        if (key.indexOf('utm_') === 0) {
-          utms[key] = value;
-        }
-      });
-      
+      urlParams.forEach(function(value, key) { if (key.indexOf('utm_') === 0) utms[key] = value; });
       return utms;
-    } catch (e) {
-      return {};
-    }
+    } catch (e) { return {}; }
   }
 
   function saveUtmsToSession() {
     try {
       var urlUtms = getCurrentUrlUtms();
-      
-      if (Object.keys(urlUtms).length > 0) {
-        sessionStorage.setItem('SessionUtms', JSON.stringify(urlUtms));
-      }
+      if (Object.keys(urlUtms).length > 0) sessionStorage.setItem('SessionUtms', JSON.stringify(urlUtms));
     } catch (e) {}
   }
 
   function getSessionUtms() {
     try {
       var sessionUtms = sessionStorage.getItem('SessionUtms');
-      if (sessionUtms) {
-        return JSON.parse(sessionUtms);
-      }
+      if (sessionUtms) return JSON.parse(sessionUtms);
     } catch (e) {}
-    
     return {};
   }
 
   function extractExistingParams(url) {
     try {
       if (!url || typeof url !== 'string') return {};
-      
       var existingParams = {};
       var questionMarkIndex = url.indexOf('?');
-      
       if (questionMarkIndex === -1) return existingParams;
-      
+
       var queryString = url.substring(questionMarkIndex + 1);
       var hashIndex = queryString.indexOf('#');
-      
-      if (hashIndex !== -1) {
-        queryString = queryString.substring(0, hashIndex);
-      }
-      
+      if (hashIndex !== -1) queryString = queryString.substring(0, hashIndex);
+
       var pairs = queryString.split('&');
-      
       for (var i = 0; i < pairs.length; i++) {
         if (pairs[i]) {
           var pair = pairs[i].split('=');
           var key = pair[0];
           var value = pair.length > 1 ? pair[1] : '';
-          
-          // trocado de xcod -> src
-          if (key !== 'src') {
-            existingParams[key] = value;
-          }
+          if (key !== 'src') existingParams[key] = value; // src é o indexador
         }
       }
-      
       return existingParams;
-    } catch (e) {
-      return {};
-    }
+    } catch (e) { return {}; }
   }
 
-  // renomeado: buildUrlWithXcod -> buildUrlWithSrc
   function buildUrlWithSrc(index, existingParams) {
     try {
       var currentUrlUtms = getCurrentUrlUtms();
       var sessionUtms = getSessionUtms();
-
-      // trocado de xcod -> src
       var parts = ["src=" + index];
-      
+
       var finalUtms = {};
-      for (var key in sessionUtms) {
-        if (sessionUtms.hasOwnProperty(key)) {
-          finalUtms[key] = sessionUtms[key];
+      for (var key in sessionUtms) if (sessionUtms.hasOwnProperty(key)) finalUtms[key] = sessionUtms[key];
+      for (var key2 in currentUrlUtms) if (currentUrlUtms.hasOwnProperty(key2)) finalUtms[key2] = currentUrlUtms[key2];
+
+      for (var k in finalUtms) if (finalUtms.hasOwnProperty(k)) parts.push(k + "=" + finalUtms[k]);
+
+      for (var eKey in existingParams) {
+        if (existingParams.hasOwnProperty(eKey)) {
+          var isUtm = eKey.indexOf('utm_') === 0;
+          if (!isUtm) parts.push(eKey + "=" + existingParams[eKey]);
         }
       }
-      
-      for (var key in currentUrlUtms) {
-        if (currentUrlUtms.hasOwnProperty(key)) {
-          finalUtms[key] = currentUrlUtms[key];
-        }
-      }
-      
-      for (var key in finalUtms) {
-        if (finalUtms.hasOwnProperty(key)) {
-          parts.push(key + "=" + finalUtms[key]);
-        }
-      }
-      
-      for (var key in existingParams) {
-        if (existingParams.hasOwnProperty(key)) {
-          var isUtm = key.indexOf('utm_') === 0;
-          if (!isUtm) {
-            parts.push(key + "=" + existingParams[key]);
-          }
-        }
-      }
-      
+
       return parts.length > 0 ? "?" + parts.join("&") : "";
-    } catch (e) {
-      return "";
-    }
+    } catch (e) { return ""; }
   }
 
   function removeQueryString(url) {
     try {
       if (!url || typeof url !== 'string') return url;
-      
       var questionMarkIndex = url.indexOf('?');
       var hashIndex = url.indexOf('#');
-      
       if (questionMarkIndex === -1) return url;
-      
-      if (hashIndex !== -1) {
-        return url.substring(0, questionMarkIndex) + url.substring(hashIndex);
-      }
-      
+      if (hashIndex !== -1) return url.substring(0, questionMarkIndex) + url.substring(hashIndex);
       return url.substring(0, questionMarkIndex);
-    } catch (e) {
-      return url;
-    }
+    } catch (e) { return url; }
   }
 
-  // renomeado: hasXcodParam -> hasSrcParam
   function hasSrcParam(url) {
-    try {
-      if (!url || typeof url !== 'string') return false;
-      return url.indexOf('src=') !== -1;
-    } catch (e) {
-      return false;
-    }
+    try { return !!(url && typeof url === 'string' && url.indexOf('src=') !== -1); }
+    catch (e) { return false; }
   }
 
   function processRedirectUrl(url) {
     try {
       if (!url || typeof url !== 'string') return url;
-      
-      // trocado de hasXcodParam -> hasSrcParam
       if (hasSrcParam(url)) return url;
-      
+
       var index = getOrSetIndex();
       var existingParams = extractExistingParams(url);
       var baseUrl = removeQueryString(url);
-
-      // trocado de buildUrlWithXcod -> buildUrlWithSrc
       var urlString = buildUrlWithSrc(index, existingParams);
-      
+
       return baseUrl + urlString;
-    } catch (e) {
-      return url;
-    }
+    } catch (e) { return url; }
   }
 
   function scanObjectForRedirectUrl(obj, visited) {
     if (!visited) visited = new WeakSet();
     if (!obj || typeof obj !== 'object' || visited.has(obj)) return;
-    
+
     visited.add(obj);
-    
+
     try {
-      if (obj.redirect_url && typeof obj.redirect_url === 'string') {
-        obj.redirect_url = processRedirectUrl(obj.redirect_url);
-      }
-      
+      if (obj.redirect_url && typeof obj.redirect_url === 'string') obj.redirect_url = processRedirectUrl(obj.redirect_url);
+
       for (var key in obj) {
         if (obj.hasOwnProperty(key)) {
           if (key === 'redirect_url' && typeof obj[key] === 'string') {
@@ -397,103 +250,75 @@
 
   function isFormValid(form) {
     try {
-      if (form.checkValidity && !form.checkValidity()) {
-        return false;
-      }
-      
+      if (form.checkValidity && !form.checkValidity()) return false;
+
       var requiredFields = form.querySelectorAll('[required], [aria-required="true"], .elementor-field-required input, .elementor-field-required textarea, .elementor-field-required select');
-      
       for (var i = 0; i < requiredFields.length; i++) {
         var field = requiredFields[i];
-        
-        if (field.offsetParent === null) {
-          continue;
-        }
-        
+        if (field.offsetParent === null) continue;
+
         var value = field.value ? field.value.trim() : '';
-        
+
         if (field.type === 'checkbox' || field.type === 'radio') {
           var name = field.name;
           var checked = form.querySelector('input[name="' + name + '"]:checked');
-          if (!checked) {
-            return false;
-          }
-        }
-        else if (!value || value === '') {
+          if (!checked) return false;
+        } else if (!value) {
           return false;
         }
-        
+
         if (field.type === 'email' && value) {
           var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailPattern.test(value)) {
-            return false;
-          }
+          if (!emailPattern.test(value)) return false;
         }
       }
-      
       return true;
-    } catch (e) {
-      return true;
-    }
+    } catch (e) { return true; }
   }
 
   function getFormData(form) {
     try {
       var formData = {};
       var elements = form.elements;
-      
+
       for (var i = 0; i < elements.length; i++) {
         var element = elements[i];
         var name = element.name;
         var value = element.value;
-        
         if (!name) continue;
-        
+
         if (element.type === 'checkbox' || element.type === 'radio') {
           if (element.checked) {
             if (formData[name]) {
-              if (Array.isArray(formData[name])) {
-                formData[name].push(value);
-              } else {
-                formData[name] = [formData[name], value];
-              }
+              if (Array.isArray(formData[name])) formData[name].push(value);
+              else formData[name] = [formData[name], value];
             } else {
               formData[name] = value;
             }
           }
-        }
-        else if (element.type === 'select-multiple') {
+        } else if (element.type === 'select-multiple') {
           var selected = [];
-          for (var j = 0; j < element.options.length; j++) {
-            if (element.options[j].selected) {
-              selected.push(element.options[j].value);
-            }
-          }
+          for (var j = 0; j < element.options.length; j++) if (element.options[j].selected) selected.push(element.options[j].value);
           formData[name] = selected;
-        }
-        else {
+        } else {
           formData[name] = value;
         }
       }
-      
+
       return formData;
-    } catch (e) {
-      return {};
-    }
+    } catch (e) { return {}; }
   }
 
   function pushFormSubmitEvent(form) {
     try {
-      if (!isFormValid(form)) {
-        return;
-      }
-      
+      if (!isFormValid(form)) return;
+
       var formId = form.getAttribute('data-form-id') || form.id || '';
       var formName = form.getAttribute('name') || form.getAttribute('data-form-name') || '';
       var formClasses = form.className || '';
       var formAction = form.getAttribute('action') || window.location.href;
       var formData = getFormData(form);
-      
+
       window.dataLayer = window.dataLayer || [];
       window.dataLayer.push({
         event: 'gtm.formSubmit',
@@ -511,18 +336,17 @@
 
   function processElementorForms(doc) {
     if (!doc) return;
-    
+
     try {
       var forms = doc.querySelectorAll('.elementor-form, form[class*="elementor"]');
-      
+
       for (var i = 0; i < forms.length; i++) {
         var form = forms[i];
-        
         if (processedForms.has(form)) continue;
-        
+
         try {
           processedForms.add(form);
-          
+
           var dataSettings = form.getAttribute('data-settings');
           if (dataSettings) {
             try {
@@ -533,11 +357,11 @@
               }
             } catch (e) {}
           }
-          
+
           form.addEventListener('submit', function(e) {
             try {
               pushFormSubmitEvent(this);
-              
+
               var dataSettings = this.getAttribute('data-settings');
               if (dataSettings) {
                 var settings = JSON.parse(dataSettings);
@@ -548,7 +372,7 @@
               }
             } catch (err) {}
           }, true);
-          
+
         } catch (e) {}
       }
     } catch (e) {}
@@ -558,11 +382,11 @@
     try {
       var XHR = XMLHttpRequest.prototype;
       var send = XHR.send;
-      
+
       XHR.send = function(data) {
         var self = this;
         var oldOnReadyStateChange = this.onreadystatechange;
-        
+
         var processResponse = function() {
           if (self.readyState === 4) {
             try {
@@ -570,29 +394,21 @@
               if (contentType.indexOf('application/json') > -1 && self.responseText) {
                 try {
                   var jsonData = JSON.parse(self.responseText);
-                  
                   if (jsonData && jsonData.data && jsonData.data.redirect_url) {
                     jsonData.data.redirect_url = processRedirectUrl(jsonData.data.redirect_url);
-                    
-                    Object.defineProperty(self, 'responseText', {
-                      writable: true,
-                      configurable: true,
-                      value: JSON.stringify(jsonData)
-                    });
+                    Object.defineProperty(self, 'responseText', { writable: true, configurable: true, value: JSON.stringify(jsonData) });
                   }
                 } catch(parseError) {}
               }
             } catch(e) {}
           }
         };
-        
+
         this.onreadystatechange = function() {
           processResponse();
-          if (oldOnReadyStateChange) {
-            return oldOnReadyStateChange.apply(this, arguments);
-          }
+          if (oldOnReadyStateChange) return oldOnReadyStateChange.apply(this, arguments);
         };
-        
+
         return send.apply(this, arguments);
       };
     } catch(e) {}
@@ -604,20 +420,18 @@
       window.fetch = function() {
         return originalFetch.apply(this, arguments).then(function(response) {
           var clonedResponse = response.clone();
-          
+
           try {
             var contentType = response.headers.get('content-type') || '';
             if (contentType.indexOf('application/json') > -1) {
               clonedResponse.json().then(function(data) {
                 try {
-                  if (data && data.data && data.data.redirect_url) {
-                    data.data.redirect_url = processRedirectUrl(data.data.redirect_url);
-                  }
+                  if (data && data.data && data.data.redirect_url) data.data.redirect_url = processRedirectUrl(data.data.redirect_url);
                 } catch (e) {}
               }).catch(function() {});
             }
           } catch (e) {}
-          
+
           return response;
         });
       };
@@ -629,20 +443,15 @@
       if (window.jQuery) {
         jQuery(document).on('submit_success', '.elementor-form', function(e, form) {
           try {
-            if (form && form.settings && form.settings.redirect_url) {
-              form.settings.redirect_url = processRedirectUrl(form.settings.redirect_url);
-            }
-            
+            if (form && form.settings && form.settings.redirect_url) form.settings.redirect_url = processRedirectUrl(form.settings.redirect_url);
             scanObjectForRedirectUrl(form);
           } catch (err) {}
         });
       }
-      
+
       if (window.elementorFrontend && window.elementorFrontend.hooks) {
         window.elementorFrontend.hooks.addAction('frontend/element_ready/form.default', function($scope) {
-          try {
-            processElementorForms($scope[0] || document);
-          } catch (e) {}
+          try { processElementorForms($scope[0] || document); } catch (e) {}
         });
       }
     } catch (e) {}
@@ -651,16 +460,11 @@
   function observeDOMChanges() {
     try {
       if (window.MutationObserver) {
-        var observer = new MutationObserver(function(mutations) {
-          setTimeout(function() {
-            processElementorForms(document);
-          }, 500);
+        var observer = new MutationObserver(function() {
+          setTimeout(function() { processElementorForms(document); }, 500);
         });
-        
-        observer.observe(document.body || document.documentElement, {
-          childList: true,
-          subtree: true
-        });
+
+        observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
       }
     } catch (e) {}
   }
@@ -668,11 +472,11 @@
   try {
     saveUtmsToSession();
     getOrSetIndex();
-    
+
     interceptXHR();
     interceptFetch();
     interceptElementorSubmit();
-    
+
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function() {
         setTimeout(function() {
@@ -686,7 +490,7 @@
         observeDOMChanges();
       }, 500);
     }
-    
+
   } catch (e) {}
 })();
 </script>
