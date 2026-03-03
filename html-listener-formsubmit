@@ -1,109 +1,74 @@
-<script id="gtm-ajax-listener" type="text/javascript">
-
+<script>
 (function () {
   'use strict';
 
-  var originalOpen = window.XMLHttpRequest.prototype.open,
-      originalSend = window.XMLHttpRequest.prototype.send;
+  function initForm($form) {
+    if ($form.data('gl-init')) return;
+    $form.data('gl-init', true);
 
-  function trimSpecialChars(str) {
-    if (str) {
-      return str.replace(/^[\s﻿\xA0]+|[\s﻿\xA0]+$/g, '');
-    }
-  }
+    $form.on('submit_success', function () {
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'generate_lead'
+      });
+    });
 
-  function objMap(data, delimiter, splitSeparator, decode) {
-    if (!data) {
-      return {};
-    }
-    var obj = {};
-    var arr = data.split(delimiter);
-    for (var i = 0; i < arr.length; i++) {
-      var item = decode ? decodeURIComponent(arr[i]) : arr[i];
-      var pair = item.split(splitSeparator);
-      var key = trimSpecialChars(pair[0]);
-      var value = trimSpecialChars(pair[1]);
-      if (key && value) {
-        obj[key] = value;
-      }
-    }
-    return obj;
-  }
+    $form.on('submit', function (e) {
+      var valid = true;
 
-  function getUrlSegments(url) {
-    var fakeElement = document.createElement('a');
-    fakeElement.href = url;
-    var pathName = fakeElement.pathname[0] === '/' ? fakeElement.pathname : '/' + fakeElement.pathname;
-    var queryString = fakeElement.search[0] === '?' ? fakeElement.search.slice(1) : fakeElement.search;
-    var queryParameters = objMap(queryString, '&', '=', true);
-    return {
-      fullUrl: fakeElement,
-      hostName: fakeElement.hostname,
-      protocol: fakeElement.protocol,
-      pathName: pathName,
-      queryString: queryString,
-      queryParameters: queryParameters,
-      fragment: fakeElement.hash
-    };
-  }
+      $form.find('[required], [aria-required="true"]').each(function () {
+        var $f = $(this);
+        var val = $.trim($f.val());
 
-  function parseJSON(text) {
-    try {
-      return JSON.parse(text);
-    } catch (err) {
-      return false;
-    }
-  }
+        if (!val) { valid = false; return false; }
 
-  function pushEvent(xhr) {
-    var urlSegments = getUrlSegments(xhr.requestUrl);
-    var headers = objMap(xhr.getAllResponseHeaders(), '\n', ':');
-    var responseJSON = xhr.responseType == 'json' ? xhr.response :
-                       (xhr.responseType == 'text' || xhr.responseType == '') ? parseJSON(xhr.responseText) :
-                       xhr.response;
+        if ($f.attr('type') === 'email') {
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+            valid = false; return false;
+          }
+        }
+      });
 
-    dataLayer.push({
-      event: 'generate_lead',
-      attributes: {
-        'type': xhr.method || '',
-        'url': urlSegments.fullUrl || '',
-        'queryParameters': urlSegments.queryParameters,
-        'pathname': urlSegments.pathName || '',
-        'hostname': urlSegments.hostName || '',
-        'protocol': urlSegments.protocol || '',
-        'fragment': urlSegments.fragment || '',
-        'statusCode': xhr.status || '',
-        'statusText': xhr.statusText || '',
-        'headers': headers,
-        'timestamp': (new Date).getTime() || '',
-        'contentType': headers['content-type'] || '',
-        'response': (responseJSON || ((xhr.responseType === '' || xhr.responseType === 'document') && xhr.responseXML) || xhr.responseText || '')
+      if (!valid) {
+        e.stopImmediatePropagation();
       }
     });
   }
 
-  function openRequest() {
-    this.method = arguments[0];
-    this.requestUrl = arguments[1];
-    originalOpen.apply(this, arguments);
+  function init() {
+    var $ = window.jQuery;
+    if (!$) { setTimeout(init, 200); return; }
+
+    // Inicializa forms já presentes no DOM
+    $('form.elementor-form').each(function () {
+      initForm($(this));
+    });
+
+    // Observa forms adicionados dinamicamente (popups, lazy load, etc.)
+    if (window.MutationObserver) {
+      var observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (m) {
+          m.addedNodes.forEach(function (node) {
+            if (node.nodeType !== 1) return;
+            var $node = $(node);
+            if ($node.is('form.elementor-form')) {
+              initForm($node);
+            } else {
+              $node.find('form.elementor-form').each(function () {
+                initForm($(this));
+              });
+            }
+          });
+        });
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
   }
 
-  function sendRequest() {
-    var originalOnReadyStateChange = this.onreadystatechange || null;
-    this.onreadystatechange = function () {
-      if (this.readyState === 4) {
-        pushEvent(this);
-      }
-      if (originalOnReadyStateChange) {
-        return originalOnReadyStateChange.apply(this, arguments);
-      }
-    };
-    return originalSend.apply(this, arguments);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
   }
-
-  window.XMLHttpRequest.prototype.open = openRequest;
-  window.XMLHttpRequest.prototype.send = sendRequest;
-
 })();
-
 </script>
